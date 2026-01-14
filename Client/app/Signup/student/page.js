@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -18,9 +17,8 @@ export default function signup() {
   const [formData, setFormData] = useState({
     name: "",
     mobile: "",
-    studentId: "",
+    userId: "",
     organizationId: "",
-    email: "",
     password: "",
     confirmPassword: "",
   });
@@ -52,7 +50,7 @@ export default function signup() {
 
         const response = await authAPI.signup({
           name: formData.name,
-          email: formData.email,
+          userId: formData.userId,
           password: formData.password,
           type: "student",
           mobile: formData.mobile,
@@ -62,7 +60,7 @@ export default function signup() {
         localStorage.setItem("student", JSON.stringify(response.data.user));
       } else {
         const response = await authAPI.login({
-          email: formData.email,
+          userId: formData.userId,
           password: formData.password,
         });
 
@@ -72,7 +70,7 @@ export default function signup() {
       router.push("/student-dashboard");
     } catch (err) {
       setError(
-        err.response?.data?.message || "An error occurred. Please try again.",
+        err.response?.data?.message || "An error occurred. Please try again."
       );
     } finally {
       setLoading(false);
@@ -160,12 +158,12 @@ export default function signup() {
               </p>
 
               <Input
-                label="Email Address"
-                name="email"
-                type="email"
-                value={formData.email}
+                label="Student Id"
+                name="userId"
+                type="number"
+                value={formData.userId}
                 onChange={handleChange}
-                placeholder="your.email@example.com"
+                placeholder="Enter your id"
                 required
               />
 
@@ -219,8 +217,8 @@ export default function signup() {
                 {loading
                   ? "Processing..."
                   : isLogin
-                    ? "Sign In"
-                    : "Create Account"}
+                  ? "Sign In"
+                  : "Create Account"}
               </Button>
             </form>
 

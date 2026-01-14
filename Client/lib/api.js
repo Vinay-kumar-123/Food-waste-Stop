@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
 const apiClient = axios.create({
   baseURL: API_URL,
@@ -14,6 +14,11 @@ export const authAPI = {
   signup: (data) => apiClient.post("/auth/signup", data),
   login: (data) => apiClient.post("/auth/login", data),
 };
+
+export const organizationAPI = {
+  generateOrgId: () => apiClient.get("/organization/generate-id"),
+};
+
 
 // Menu API calls
 export const menuAPI = {
