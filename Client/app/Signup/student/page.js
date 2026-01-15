@@ -67,7 +67,7 @@ export default function signup() {
         localStorage.setItem("student", JSON.stringify(response.data.user));
       }
 
-      router.push("/student-dashboard");
+      router.push("/Dashboard/student");
     } catch (err) {
       setError(
         err.response?.data?.message || "An error occurred. Please try again."
@@ -160,7 +160,7 @@ export default function signup() {
               <Input
                 label="Student Id"
                 name="userId"
-                type="number"
+                type="text"
                 value={formData.userId}
                 onChange={handleChange}
                 placeholder="Enter your id"
