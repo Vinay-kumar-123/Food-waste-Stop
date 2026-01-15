@@ -17,46 +17,48 @@ export default function StudentDashboard() {
   const [history, setHistory] = useState([]);
 
   /* ================= LOAD DATA ================= */
- useEffect(() => {
-  const stored = localStorage.getItem("student");
-  if (!stored) {
-    router.push("/Signup/student");
-    return;
-  }
+  useEffect(() => {
+    const stored = localStorage.getItem("student");
+    if (!stored) {
+      router.push("/Signup/student");
+      return;
+    }
 
-  const s = JSON.parse(stored);
-  setStudent(s);
+    const s = JSON.parse(stored);
+    setStudent(s);
 
-  // 1️⃣ Fetch active menu
-  fetch(`http://127.0.0.1:8000/menu/active/${s.organizationId}`)
-    .then((res) => res.json())
-    .then((menuData) => {
-      if (!menuData.active) {
+    // 1️⃣ Fetch active menu
+    fetch(`http://127.0.0.1:8000/menu/active/${s.organizationId}`)
+      .then((res) => res.json())
+      .then(async (menuData) => {
+        if (!menuData.active) {
+          setMenu(null);
+          setSubmitted(false);
+          return;
+        }
+
+        setMenu(menuData);
+
+        // 2️⃣ Fetch student orders
+        const orderRes = await fetch(
+          `http://127.0.0.1:8000/orders/student/${s.userId}`
+        );
+        const orders = await orderRes.json();
+        setHistory(orders);
+
+        // ✅ correct submit check (student + menu)
+        const already = orders.find(
+          (o) => o.menuId === menuData._id && o.studentId === s.userId
+        );
+        setSubmitted(!!already);
+
+        
+      })
+      .catch(() => {
         setMenu(null);
-        return;
-      }
-
-      setMenu(menuData);
-
-      // 2️⃣ Fetch student orders AFTER menu
-      fetch(`http://127.0.0.1:8000/orders/student/${s.studentId}`)
-        .then((res) => res.json())
-        .then((orders) => {
-          setHistory(orders);
-
-          // ✅ CORRECT submitted check
-          const alreadySubmitted = orders.find(
-            (o) =>
-              o.menuId === menuData._id &&
-              o.studentId === s.userId
-          );
-
-          setSubmitted(!!alreadySubmitted);
-        });
-    })
-    .catch(() => setMenu(null));
-}, [router]);
-
+        setSubmitted(false);
+      });
+  }, [router]);
 
   /* ================= ACTIONS ================= */
   const handleLogout = () => {
@@ -81,24 +83,25 @@ export default function StudentDashboard() {
       return;
     }
 
-    try {
-      await fetch("http://127.0.0.1:8000/orders/submit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          studentId: student.userId,
-          studentName: student.name,
-          organizationId: student.organizationId,
-          menuId: menu._id,
-          items,
-        }),
-      });
+    const res = await fetch("http://127.0.0.1:8000/orders/submit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        studentId: student.userId,
+        studentName: student.name,
+        organizationId: student.organizationId,
+        menuId: menu._id,
+        items,
+      }),
+    });
 
-      setSubmitted(true);
-      alert("Order submitted successfully");
-    } catch {
+    if (!res.ok) {
       alert("You already submitted for this menu");
+      return;
     }
+
+    setSubmitted(true);
+    alert("Order submitted successfully");
   };
 
   if (!student) return null;
@@ -113,12 +116,10 @@ export default function StudentDashboard() {
               <Leaf className="text-green-500" />
             </div>
             <div>
-              <p className=" font-bold  text-black-500">
-                Welcome, {student.name}
-              </p>
-              <p className="font-bold text-gray-500">ID: {student.userId}</p>
-              <p className="font-bold text-gray-500">
-                ORGid: {student.organizationId}
+              <p className="font-bold">Welcome, {student.name}</p>
+              <p className="text-sm text-gray-500">ID: {student.userId}</p>
+              <p className="text-sm text-gray-500">
+                ORG: {student.organizationId}
               </p>
             </div>
           </Link>
@@ -130,7 +131,7 @@ export default function StudentDashboard() {
       </header>
 
       <main className="max-w-7xl mx-auto px-6 py-8 space-y-8">
-        {/* ================= TODAY MENU ================= */}
+        {/* TODAY MENU */}
         <Card>
           <CardBody>
             <h2 className="text-xl font-bold mb-3">Today’s Menu</h2>
@@ -191,7 +192,7 @@ export default function StudentDashboard() {
           </CardBody>
         </Card>
 
-        {/* ================= PREVIOUS ORDERS ================= */}
+        {/* PREVIOUS ORDERS */}
         <Card>
           <CardBody>
             <h2 className="text-xl font-bold mb-4">Previous Orders (Last 7)</h2>
@@ -201,14 +202,14 @@ export default function StudentDashboard() {
             )}
 
             {history.map((order) => (
-              <div key={order._id} className=" font-bold border-b py-3 text-sm space-y-1">
+              <div key={order._id} className="border-b py-3 text-sm space-y-1">
                 <p className="font-medium">
-                  {new Date(order.date).toDateString()}
+                  {new Date(order.createdAt).toDateString()}
                 </p>
 
                 {order.items.map((i, idx) => (
                   <p key={idx}>
-                    {i.name} – {" "}
+                    {i.name} –{" "}
                     <span
                       className={
                         i.status === "Eat" ? "text-green-600" : "text-red-500"

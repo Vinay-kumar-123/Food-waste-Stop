@@ -10,6 +10,7 @@ router = APIRouter(prefix="/orders", tags=["Orders"])
 
 @router.post("/submit")
 def submit(order: OrderCreate):
+    print("ORDER PAYLOAD RECEIVED:", order.model_dump())
     saved = submit_order(order.model_dump())
 
     if not saved:
@@ -29,3 +30,4 @@ def student_orders(student_id: str):
         d["_id"] = str(d["_id"])
 
     return data
+
