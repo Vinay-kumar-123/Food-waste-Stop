@@ -91,7 +91,7 @@ export default function OrganizationSignup() {
         );
       }
 
-      router.push("/org-dashboard");
+      router.push("/Dashboard/admin");
     } catch (err) {
       setError(
         err.response?.data?.message || "Something went wrong"

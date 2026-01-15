@@ -1,184 +1,228 @@
 "use client";
-import { useEffect, useState } from "react";
-import api from "@/lib/api";
-
-export default function StudentDashboard() {
-  const [menu, setMenu] = useState(null);
-  const [bill, setBill] = useState(null);
-
-  useEffect(() => {
-    api.get("/menu/today").then(res => setMenu(res.data));
-    api.get("/student/bill").then(res => setBill(res.data));
-  }, []);
-
-  return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Student Dashboard</h1>
-
-      {menu && (
-        <div className="bg-white p-4 rounded mb-4">
-          <h3 className="font-semibold">Today's Menu</h3>
-          <p>🍳 Breakfast: {menu.breakfast}</p>
-          <p>🍛 Lunch: {menu.lunch}</p>
-          <p>🍽 Dinner: {menu.dinner}</p>
-        </div>
-      )}
-
-      {bill && (
-        <div className="bg-white p-4 rounded">
-          <p>Total Meals: {bill.totalMeals}</p>
-          <p className="font-bold">Amount: ₹{bill.totalAmount}</p>
-        </div>
-      )}
-    </div>
-  );
-}
-
-
-"use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Leaf, LogOut, Menu } from "lucide-react";
+import { Leaf, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody } from "@/components/ui/Card";
 
 export default function StudentDashboard() {
   const router = useRouter();
+
   const [student, setStudent] = useState(null);
+  const [menu, setMenu] = useState(null);
+  const [selection, setSelection] = useState({});
+  const [submitted, setSubmitted] = useState(false);
+  const [history, setHistory] = useState([]);
 
-  useEffect(() => {
-    const storedStudent = localStorage.getItem("student");
-    if (!storedStudent) {
-      router.push("/student-signup");
-      return;
-    }
-    setStudent(JSON.parse(storedStudent));
-  }, [router]);
+  /* ================= LOAD DATA ================= */
+ useEffect(() => {
+  const stored = localStorage.getItem("student");
+  if (!stored) {
+    router.push("/Signup/student");
+    return;
+  }
 
+  const s = JSON.parse(stored);
+  setStudent(s);
+
+  // 1️⃣ Fetch active menu
+  fetch(`http://127.0.0.1:8000/menu/active/${s.organizationId}`)
+    .then((res) => res.json())
+    .then((menuData) => {
+      if (!menuData.active) {
+        setMenu(null);
+        return;
+      }
+
+      setMenu(menuData);
+
+      // 2️⃣ Fetch student orders AFTER menu
+      fetch(`http://127.0.0.1:8000/orders/student/${s.studentId}`)
+        .then((res) => res.json())
+        .then((orders) => {
+          setHistory(orders);
+
+          // ✅ CORRECT submitted check
+          const alreadySubmitted = orders.find(
+            (o) =>
+              o.menuId === menuData._id &&
+              o.studentId === s.userId
+          );
+
+          setSubmitted(!!alreadySubmitted);
+        });
+    })
+    .catch(() => setMenu(null));
+}, [router]);
+
+
+  /* ================= ACTIONS ================= */
   const handleLogout = () => {
     localStorage.removeItem("student");
     router.push("/");
   };
 
-  if (!student) {
-    return <div>Loading...</div>;
-  }
+  const selectItem = (name, status) => {
+    setSelection((prev) => ({ ...prev, [name]: status }));
+  };
+
+  const submitOrder = async () => {
+    if (!menu) return;
+
+    const items = Object.keys(selection).map((name) => ({
+      name,
+      status: selection[name],
+    }));
+
+    if (!items.length) {
+      alert("Please select Eat or Skip");
+      return;
+    }
+
+    try {
+      await fetch("http://127.0.0.1:8000/orders/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          studentId: student.userId,
+          studentName: student.name,
+          organizationId: student.organizationId,
+          menuId: menu._id,
+          items,
+        }),
+      });
+
+      setSubmitted(true);
+      alert("Order submitted successfully");
+    } catch {
+      alert("You already submitted for this menu");
+    }
+  };
+
+  if (!student) return null;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-white">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-                <Leaf className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <p className="text-xs text-gray-600">Welcome back</p>
-                <p className="text-lg font-bold text-foreground">
-                  {student.name}
-                </p>
-              </div>
-            </Link>
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2 text-foreground hover:bg-gray-100 rounded-lg transition"
-            >
-              <LogOut className="w-4 h-4" />
-              <span className="text-sm font-medium">Logout</span>
-            </button>
-          </div>
+      {/* HEADER */}
+      <header className="bg-white border-b sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between">
+          <Link href="/Dashboard/student" className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+              <Leaf className="text-green-500" />
+            </div>
+            <div>
+              <p className=" font-bold  text-black-500">
+                Welcome, {student.name}
+              </p>
+              <p className="font-bold text-gray-500">ID: {student.userId}</p>
+              <p className="font-bold text-gray-500">
+                ORGid: {student.organizationId}
+              </p>
+            </div>
+          </Link>
+
+          <button onClick={handleLogout} className="flex gap-2 items-center">
+            <LogOut className="w-4 h-4" /> Logout
+          </button>
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Stats */}
-        <div className="grid md:grid-cols-4 gap-4 mb-8">
-          <Card>
-            <CardBody>
-              <p className="text-sm text-gray-600 mb-1">Student ID</p>
-              <p className="text-lg font-bold text-foreground">
-                {student.studentId}
-              </p>
-            </CardBody>
-          </Card>
-          <Card>
-            <CardBody>
-              <p className="text-sm text-gray-600 mb-1">Organization</p>
-              <p className="text-lg font-bold text-foreground">
-                {student.organizationId}
-              </p>
-            </CardBody>
-          </Card>
-          <Card>
-            <CardBody>
-              <p className="text-sm text-gray-600 mb-1">Email</p>
-              <p className="text-lg font-bold text-foreground text-xs">
-                {student.email}
-              </p>
-            </CardBody>
-          </Card>
-          <Card>
-            <CardBody>
-              <p className="text-sm text-gray-600 mb-1">Status</p>
-              <p className="text-lg font-bold text-primary">Active</p>
-            </CardBody>
-          </Card>
-        </div>
-
-        {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-6 py-8 space-y-8">
+        {/* ================= TODAY MENU ================= */}
         <Card>
           <CardBody>
-            <h2 className="text-2xl font-bold text-foreground mb-4">
-              Today's Menu
-            </h2>
-            <p className="text-gray-600 mb-6">
-              Menu will be loaded from the API. This is a placeholder.
-            </p>
+            <h2 className="text-xl font-bold mb-3">Today’s Menu</h2>
 
-            <div className="space-y-3">
-              <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                <h3 className="font-semibold text-foreground">Paneer Tikka</h3>
-                <p className="text-sm text-gray-600">
-                  200 cal • ₹100 • Vegetarian
-                </p>
-                <div className="mt-3 flex gap-2">
-                  <Button variant="primary" size="sm">
-                    Eat
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    Skip
-                  </Button>
-                </div>
+            {!menu && (
+              <p className="text-gray-500">
+                No menu available right now. Please wait.
+              </p>
+            )}
+
+            {menu && submitted && (
+              <p className="text-green-600 font-medium">
+                ✔ You have already submitted today’s order
+              </p>
+            )}
+
+            {menu && !submitted && (
+              <div className="space-y-4">
+                {menu.items.map((item) => (
+                  <div
+                    key={item.name}
+                    className="p-4 border rounded-lg bg-gray-50"
+                  >
+                    <h3 className="font-semibold">{item.name}</h3>
+                    <p className="text-sm text-gray-600">₹{item.price}</p>
+
+                    <div className="mt-3 flex gap-2">
+                      <Button
+                        size="sm"
+                        variant={
+                          selection[item.name] === "Eat" ? "primary" : "outline"
+                        }
+                        onClick={() => selectItem(item.name, "Eat")}
+                      >
+                        Eat
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        variant={
+                          selection[item.name] === "Skip"
+                            ? "primary"
+                            : "outline"
+                        }
+                        onClick={() => selectItem(item.name, "Skip")}
+                      >
+                        Skip
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+
+                <Button className="w-full mt-4" onClick={submitOrder}>
+                  Submit Selection
+                </Button>
               </div>
-
-              <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                <h3 className="font-semibold text-foreground">
-                  Butter Chicken
-                </h3>
-                <p className="text-sm text-gray-600">
-                  280 cal • ₹120 • Non-Veg
-                </p>
-                <div className="mt-3 flex gap-2">
-                  <Button variant="primary" size="sm">
-                    Eat
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    Skip
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            <Button variant="primary" size="lg" className="w-full mt-6">
-              Submit Selection
-            </Button>
+            )}
           </CardBody>
         </Card>
-      </div>
+
+        {/* ================= PREVIOUS ORDERS ================= */}
+        <Card>
+          <CardBody>
+            <h2 className="text-xl font-bold mb-4">Previous Orders (Last 7)</h2>
+
+            {history.length === 0 && (
+              <p className="text-gray-500">No previous orders found</p>
+            )}
+
+            {history.map((order) => (
+              <div key={order._id} className=" font-bold border-b py-3 text-sm space-y-1">
+                <p className="font-medium">
+                  {new Date(order.date).toDateString()}
+                </p>
+
+                {order.items.map((i, idx) => (
+                  <p key={idx}>
+                    {i.name} – {" "}
+                    <span
+                      className={
+                        i.status === "Eat" ? "text-green-600" : "text-red-500"
+                      }
+                    >
+                      {i.status}
+                    </span>
+                  </p>
+                ))}
+              </div>
+            ))}
+          </CardBody>
+        </Card>
+      </main>
     </div>
   );
 }

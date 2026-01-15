@@ -1,43 +1,61 @@
 import axios from "axios";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
 const apiClient = axios.create({
   baseURL: API_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
+  headers: { "Content-Type": "application/json" },
 });
 
-// Auth API calls
+/* AUTH */
 export const authAPI = {
   signup: (data) => apiClient.post("/auth/signup", data),
   login: (data) => apiClient.post("/auth/login", data),
 };
 
+/* ORGANIZATION */
 export const organizationAPI = {
   generateOrgId: () => apiClient.get("/organization/generate-id"),
 };
 
-
-// Menu API calls
+/* MENU */
 export const menuAPI = {
-  getToday: (organizationId) =>
-    apiClient.get("/menu/today", { params: { organizationId } }),
   upload: (data) => apiClient.post("/menu/upload", data),
-  getHistory: (organizationId, limit = 7) =>
-    apiClient.get("/menu/history", { params: { organizationId, limit } }),
+  getActive: (orgId) => apiClient.get(`/menu/active/${orgId}`),
 };
 
-// Orders API calls
+/* ORDERS */
 export const ordersAPI = {
   submit: (data) => apiClient.post("/orders/submit", data),
-  getToday: () => apiClient.get("/orders/today"),
-  getStudent: (studentId) =>
-    apiClient.get("/orders/student", { params: { studentId } }),
-  getStats: (startDate, endDate) =>
-    apiClient.get("/orders/stats", { params: { startDate, endDate } }),
+  getStudentHistory: (studentId) =>
+    apiClient.get(`/orders/student/${studentId}`),
 };
+
+/* DASHBOARD */
+export const dashboardAPI = {
+  todaySummary: (orgId, menuId) =>
+    apiClient.get(`/dashboard/org/today/${orgId}/${menuId}`),
+};
+
+// Menu API calls
+// export const menuAPI = {
+//   getToday: (organizationId) =>
+//     apiClient.get("/menu/today", { params: { organizationId } }),
+//   upload: (data) => apiClient.post("/menu/upload", data),
+//   getHistory: (organizationId, limit = 7) =>
+//     apiClient.get("/menu/history", { params: { organizationId, limit } }),
+// };
+
+// // Orders API calls
+// export const ordersAPI = {
+//   submit: (data) => apiClient.post("/orders/submit", data),
+//   getToday: () => apiClient.get("/orders/today"),
+//   getStudent: (studentId) =>
+//     apiClient.get("/orders/student", { params: { studentId } }),
+//   getStats: (startDate, endDate) =>
+//     apiClient.get("/orders/stats", { params: { startDate, endDate } }),
+// };
 
 // Donations API calls
 export const donationsAPI = {
