@@ -155,16 +155,18 @@ def get_student_orders(student_id: str, limit: int = 7):
 def get_today_orders(org_id: str, menu_id: str):
     today = datetime.now(timezone.utc).date().isoformat()
 
-    print("---- DASHBOARD DEBUG ----")
-    print("ORG:", org_id)
-    print("MENU:", menu_id)
-    print("DATE:", today)
-
-    return list(
+    docs = list(
         orders.find({
             "organizationId": org_id,
-            "menuId": menu_id,     # ✅ STRING MATCH
+            "menuId": menu_id,     # STRING MATCH
             "dateOnly": today
         })
     )
+
+    # 🔑 CRITICAL FIX: ObjectId → string
+    for d in docs:
+        d["_id"] = str(d["_id"])
+
+    return docs
+
 
