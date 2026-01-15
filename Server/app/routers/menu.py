@@ -30,3 +30,4 @@ def active_menu(org_id: str):
 
     menu["_id"] = str(menu["_id"])
     return menu
+
