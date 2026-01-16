@@ -51,8 +51,6 @@ export default function StudentDashboard() {
           (o) => o.menuId === menuData._id && o.studentId === s.userId
         );
         setSubmitted(!!already);
-
-        
       })
       .catch(() => {
         setMenu(null);
@@ -184,7 +182,7 @@ export default function StudentDashboard() {
                   </div>
                 ))}
 
-                <Button className="w-full mt-4" onClick={submitOrder}>
+                <Button varient="outline" className="w-full mt-4" onClick={submitOrder}>
                   Submit Selection
                 </Button>
               </div>
@@ -202,23 +200,36 @@ export default function StudentDashboard() {
             )}
 
             {history.map((order) => (
-              <div key={order._id} className="border-b py-3 text-sm space-y-1">
-                <p className="font-medium">
+              <div
+                key={order._id}
+                className="border rounded-lg p-4 mb-4 bg-white shadow-sm"
+              >
+                {/* Date */}
+                <div className="text-sm font-semibold text-gray-800 mb-3">
                   {new Date(order.createdAt).toDateString()}
-                </p>
+                </div>
 
-                {order.items.map((i, idx) => (
-                  <p key={idx}>
-                    {i.name} –{" "}
-                    <span
-                      className={
-                        i.status === "Eat" ? "text-green-600" : "text-red-500"
-                      }
+                {/* Items */}
+                <div className="space-y-2">
+                  {order.items.map((i, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between text-sm"
                     >
-                      {i.status}
-                    </span>
-                  </p>
-                ))}
+                      <span className="capitalize text-gray-700">{i.name}</span>
+
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          i.status === "Eat"
+                            ? "bg-green-100 text-green-700"
+                            : "bg-red-100 text-red-600"
+                        }`}
+                      >
+                        {i.status}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
             ))}
           </CardBody>
