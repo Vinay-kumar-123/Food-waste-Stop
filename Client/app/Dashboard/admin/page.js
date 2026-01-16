@@ -38,9 +38,7 @@ export default function OrganizationDashboard() {
   const loadTodaySummary = async (orgId) => {
     try {
       // 1️⃣ get active menu
-      const menuRes = await fetch(
-        `http://127.0.0.1:8000/menu/active/${orgId}`
-      );
+      const menuRes = await fetch(`http://127.0.0.1:8000/menu/active/${orgId}`);
       const menu = await menuRes.json();
 
       if (!menu || !menu._id) {
@@ -107,7 +105,7 @@ export default function OrganizationDashboard() {
             <Leaf className="text-green-600" />
             <div>
               <p className="font-bold">{organization.name}</p>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-blue-500">
                 ID: {organization.organizationId}
               </p>
             </div>
@@ -131,38 +129,69 @@ export default function OrganizationDashboard() {
         {/* MENU */}
         <Card>
           <CardBody>
-            <h2 className="font-bold mb-3">Upload Menu</h2>
+            <h2 className="font-semibold text-lg mb-4">Build Today’s Menu</h2>
 
-            <div className="grid grid-cols-2 gap-3">
-              <input
-                placeholder="Item Name"
-                className="border p-2 rounded"
-                value={item.name}
-                onChange={(e) => setItem({ ...item, name: e.target.value })}
-              />
-              <input
-                placeholder="Price"
-                type="number"
-                className="border p-2 rounded"
-                value={item.price}
-                onChange={(e) => setItem({ ...item, price: +e.target.value })}
-              />
+            {/* Add Item Section */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+              <div>
+                <label className="text-sm text-gray-600">Item Name</label>
+                <input
+                  placeholder="e.g. Rice, Dal"
+                  className="border p-2 rounded w-full mt-1"
+                  value={item.name}
+                  onChange={(e) => setItem({ ...item, name: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <label className="text-sm text-gray-600">Price (₹)</label>
+                <input
+                  placeholder="e.g. 40"
+                  type="number"
+                  className="border p-2 rounded w-full mt-1"
+                  value={item.price}
+                  onChange={(e) => setItem({ ...item, price: +e.target.value })}
+                />
+              </div>
             </div>
 
-            <Button className="mt-3" onClick={addItem}>
-              Add Item
+            <Button
+              variant="outline"
+              size="sm"
+              className="mb-4"
+              onClick={addItem}
+            >
+              + Add Item
             </Button>
 
-            {menuItems.map((m, i) => (
-              <p key={i} className="text-sm">
-                • {m.name} – ₹{m.price}
-              </p>
-            ))}
-
+            {/* Menu Preview */}
             {menuItems.length > 0 && (
-              <Button className="w-full mt-4" onClick={uploadMenu}>
-                Upload Menu
-              </Button>
+              <div className="border rounded-lg p-3 bg-gray-100 space-y-2">
+                <p className="text-sm font-medium text-blue-700 mb-2">
+                  Menu Preview
+                </p>
+
+                {menuItems.map((m, i) => (
+                  <div
+                    key={i}
+                    className="flex justify-between items-center   bg-white px-3 py-2 rounded"
+                  >
+                    <span className="capitalize text-gray-800">{m.name}</span>
+                    <span className="font-medium text-gray-700">
+                      ₹{m.price}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Upload CTA */}
+            {menuItems.length > 0 && (
+              <div className="flex justify-end mt-5">
+                <Button variant="outline" className="px-8" onClick={uploadMenu}>
+                  Upload Menu
+                </Button>
+              </div>
             )}
           </CardBody>
         </Card>
@@ -175,7 +204,7 @@ export default function OrganizationDashboard() {
             {summary.orders.length === 0 ? (
               <p className="text-gray-500">No responses yet</p>
             ) : (
-              <table className="w-full border text-sm">
+              <table className="w-full border text-sm capitalize">
                 <thead className="bg-gray-100">
                   <tr>
                     <th className="border p-2">Student</th>
