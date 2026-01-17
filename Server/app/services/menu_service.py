@@ -56,7 +56,7 @@ def create_menu(data: dict):
         "organizationId": data["organizationId"],
         "items": data["items"],
         "startTime": now,
-        "endTime": now + timedelta(minutes=data.get("validMinutes", 60)),
+        "endTime": now + timedelta(minutes=data.get("validMinutes", 180)),
         "active": True
     }
 

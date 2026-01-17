@@ -13,7 +13,11 @@ export default function signup() {
   const [isLogin, setIsLogin] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState({
+    message: "",
+    type: "",
+  });
+
   const [formData, setFormData] = useState({
     name: "",
     mobile: "",
@@ -30,6 +34,48 @@ export default function signup() {
       [name]: value,
     }));
     setError("");
+  };
+  const handleApiError = (err) => {
+    // Network error
+    if (!err.response) {
+      return {
+        type: "network",
+        message: "Network error. Please check your internet connection.",
+      };
+    }
+
+    const status = err.response.status;
+    const msg = err.response.data?.message;
+
+    // Auth related
+    if (status === 401) {
+      return {
+        type: "auth",
+        message: msg || "Invalid credentials. Please try again.",
+      };
+    }
+
+    // Validation
+    if (status === 400) {
+      return {
+        type: "validation",
+        message: msg || "Please check your input details.",
+      };
+    }
+
+    // Server error
+    if (status >= 500) {
+      return {
+        type: "server",
+        message: "Server error. Please try again later.",
+      };
+    }
+
+    // Fallback
+    return {
+      type: "unknown",
+      message: msg || "Something went wrong. Please try again.",
+    };
   };
 
   const handleSubmit = async (e) => {
@@ -69,9 +115,8 @@ export default function signup() {
 
       router.push("/Dashboard/student");
     } catch (err) {
-      setError(
-        err.response?.data?.message || "An error occurred. Please try again."
-      );
+      const parsedError = handleApiError(err);
+      setError(parsedError);
     } finally {
       setLoading(false);
     }
@@ -98,7 +143,7 @@ export default function signup() {
               <Leaf className="w-7 h-7 text-white" />
             </div>
             <span className="text-2xl font-bold text-foreground">
-              Food Not Waste
+              WasteNot+
             </span>
           </div>
 
@@ -113,9 +158,19 @@ export default function signup() {
                 : "Join your college mess and start saving food"}
             </p>
 
-            {error && (
-              <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-                {error}
+            {error.message && (
+              <div
+                className={`mb-4 p-4 rounded-lg text-sm border ${
+                  error.type === "network"
+                    ? "bg-yellow-50 border-yellow-200 text-yellow-800"
+                    : error.type === "auth"
+                    ? "bg-red-50 border-red-200 text-red-700"
+                    : error.type === "validation"
+                    ? "bg-orange-50 border-orange-200 text-orange-700"
+                    : "bg-red-50 border-red-200 text-red-700"
+                }`}
+              >
+                {error.message}
               </div>
             )}
 
@@ -140,22 +195,19 @@ export default function signup() {
                     placeholder="10-digit mobile number"
                     required
                   />
+                  <Input
+                    label="Organization ID"
+                    name="organizationId"
+                    value={formData.organizationId}
+                    onChange={handleChange}
+                    placeholder="Ask your mess manager"
+                    required
+                  />
+                  <p className="text-xs text-gray-500">
+                    This is provided by your college/mess
+                  </p>
                 </>
               )}
-
-              <Input
-                label="Organization ID"
-                name="organizationId"
-                value={formData.organizationId}
-                onChange={handleChange}
-                placeholder={
-                  isLogin ? "Your organization ID" : "Ask your mess manager"
-                }
-                required
-              />
-              <p className="text-xs text-gray-500">
-                This is provided by your college/mess
-              </p>
 
               <Input
                 label="Student Id"

@@ -16,11 +16,12 @@ export default function OrganizationDashboard() {
 
   const [summary, setSummary] = useState({
     orders: [],
-    foodEaten: 0,
-    foodSkipped: 0,
   });
 
-  /* ================= LOAD ORG + SUMMARY ================= */
+  const [itemDemand, setItemDemand] = useState({});
+
+  /* ================= LOAD ORG ================= */
+
   useEffect(() => {
     const stored = localStorage.getItem("organization");
     if (!stored) {
@@ -31,31 +32,53 @@ export default function OrganizationDashboard() {
     const org = JSON.parse(stored);
     setOrganization(org);
 
-    loadTodaySummary(org.organizationId);
+    // 🔹 First load
+    loadDashboard(org.organizationId);
+
+    // 🔁 Auto refresh every 15 seconds
+    const interval = setInterval(() => {
+      loadDashboard(org.organizationId);
+    }, 15000);
+
+    // 🔴 Cleanup (VERY IMPORTANT)
+    return () => clearInterval(interval);
   }, []);
 
-  /* ================= SUMMARY LOGIC ================= */
-  const loadTodaySummary = async (orgId) => {
+  /* ================= LOAD DASHBOARD ================= */
+  const loadDashboard = async (orgId) => {
     try {
-      // 1️⃣ get active menu
+      // 1️⃣ active menu
       const menuRes = await fetch(`http://127.0.0.1:8000/menu/active/${orgId}`);
       const menu = await menuRes.json();
 
       if (!menu || !menu._id) {
-        setSummary({ orders: [], foodEaten: 0, foodSkipped: 0 });
+        setSummary({ orders: [] });
+        setItemDemand({});
         return;
       }
 
-      // 2️⃣ get summary for active menu
+      // 2️⃣ student summary
       const summaryRes = await fetch(
         `http://127.0.0.1:8000/dashboard/org/today/${orgId}/${menu._id}`
       );
       const data = await summaryRes.json();
-
       setSummary(data);
+
+      // 3️⃣ item-wise demand calculation
+      const demand = {};
+      data.orders.forEach((o) => {
+        o.items.forEach((i) => {
+          if (i.status === "Eat") {
+            demand[i.name] = (demand[i.name] || 0) + 1;
+          }
+        });
+      });
+
+      setItemDemand(demand);
     } catch (err) {
-      console.error("Summary error", err);
-      setSummary({ orders: [], foodEaten: 0, foodSkipped: 0 });
+      console.error("Dashboard error", err);
+      setSummary({ orders: [] });
+      setItemDemand({});
     }
   };
 
@@ -85,27 +108,23 @@ export default function OrganizationDashboard() {
       }),
     });
 
-    alert("Menu uploaded");
+    alert("Menu uploaded successfully");
     setMenuItems([]);
-    loadTodaySummary(organization.organizationId);
+    loadDashboard(organization.organizationId);
   };
 
   if (!organization) return null;
 
-  const total = summary.foodEaten + summary.foodSkipped;
-  const efficiency =
-    total === 0 ? "0%" : `${((summary.foodEaten / total) * 100).toFixed(1)}%`;
-
   return (
     <div className="min-h-screen bg-orange-50">
       {/* HEADER */}
-      <header className="bg-white border-b">
+      <header className="bg-white border-b sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between">
-          <Link href="/Dashboard/admin" className="flex gap-3">
+          <Link href="/Dashboard/admin" className="flex gap-3 items-center">
             <Leaf className="text-green-600" />
             <div>
               <p className="font-bold">{organization.name}</p>
-              <p className="text-sm text-blue-500">
+              <p className="text-sm text-gray-500">
                 ID: {organization.organizationId}
               </p>
             </div>
@@ -118,23 +137,38 @@ export default function OrganizationDashboard() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-8 space-y-8">
-        {/* STATS */}
-        <div className="grid md:grid-cols-4 gap-4">
-          <Stat title="Food Eaten" value={summary.foodEaten} />
-          <Stat title="Food Skipped" value={summary.foodSkipped} />
-          <Stat title="Efficiency" value={efficiency} />
-          <Stat title="Responses" value={summary.orders.length} />
-        </div>
+        {/* ================= ITEM DEMAND ================= */}
+        <Card>
+          <CardBody>
+            <h2 className="text-xl font-bold mb-4">Today’s Item-wise Demand</h2>
 
-        {/* MENU */}
+            {Object.keys(itemDemand).length === 0 ? (
+              <p className="text-gray-500">No student responses yet</p>
+            ) : (
+              <div className="grid md:grid-cols-3 gap-4">
+                {Object.entries(itemDemand).map(([name, count]) => (
+                  <div key={name} className="border rounded-lg p-4 bg-green-50">
+                    <p className="font-semibold capitalize text-lg">{name}</p>
+                    <p className="font-bold text-gray-600">
+                      {count} students will eat
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardBody>
+        </Card>
+
+        {/* ================= MENU UPLOAD ================= */}
         <Card>
           <CardBody>
             <h2 className="font-semibold text-lg mb-4">Build Today’s Menu</h2>
 
             {/* Add Item Section */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+              {" "}
               <div>
-                <label className="text-sm text-gray-600">Item Name</label>
+                <label className="text-sm text-gray-600">Item Name</label>{" "}
                 <input
                   placeholder="e.g. Rice, Dal"
                   className="border p-2 rounded w-full mt-1"
@@ -142,7 +176,6 @@ export default function OrganizationDashboard() {
                   onChange={(e) => setItem({ ...item, name: e.target.value })}
                 />
               </div>
-
               <div>
                 <label className="text-sm text-gray-600">Price (₹)</label>
                 <input
@@ -196,7 +229,7 @@ export default function OrganizationDashboard() {
           </CardBody>
         </Card>
 
-        {/* STUDENT SUMMARY */}
+        {/* ================= STUDENT SUMMARY ================= */}
         <Card>
           <CardBody>
             <h2 className="font-bold mb-3">Today’s Student Summary</h2>
@@ -204,12 +237,12 @@ export default function OrganizationDashboard() {
             {summary.orders.length === 0 ? (
               <p className="text-gray-500">No responses yet</p>
             ) : (
-              <table className="w-full border text-sm capitalize">
+              <table className="w-full border text-sm">
                 <thead className="bg-gray-100">
                   <tr>
                     <th className="border p-2">Student</th>
                     <th className="border p-2">ID</th>
-                    <th className="border p-2">Item Name</th>
+                    <th className="border p-2">Item</th>
                     <th className="border p-2">Status</th>
                   </tr>
                 </thead>
@@ -239,17 +272,5 @@ export default function OrganizationDashboard() {
         </Card>
       </main>
     </div>
-  );
-}
-
-/* ===== SMALL STAT CARD ===== */
-function Stat({ title, value }) {
-  return (
-    <Card>
-      <CardBody>
-        <p className="text-sm text-gray-500">{title}</p>
-        <p className="text-xl font-bold">{value}</p>
-      </CardBody>
-    </Card>
   );
 }
