@@ -1,8 +1,8 @@
 from passlib.context import CryptContext
-from jose import jwt
+from jose import jwt,JWTError
 from datetime import datetime, timedelta , timezone
 from app.core.config import settings
-
+from fastapi import HTTPException, status
 
 password_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
@@ -16,3 +16,4 @@ def create_token(data: dict):
     payload = data.copy()
     payload["exp"] = datetime.now(timezone.utc) + timedelta(days=7)
     return jwt.encode(payload, settings.JWT_SECRET, algorithm="HS256")
+ 

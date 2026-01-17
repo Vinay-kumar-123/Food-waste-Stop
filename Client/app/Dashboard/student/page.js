@@ -15,6 +15,7 @@ export default function StudentDashboard() {
   const [selection, setSelection] = useState({});
   const [submitted, setSubmitted] = useState(false);
   const [history, setHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   /* ================= LOAD DATA ================= */
   useEffect(() => {
@@ -27,35 +28,50 @@ export default function StudentDashboard() {
     const s = JSON.parse(stored);
     setStudent(s);
 
-    // 1️⃣ Fetch active menu
-    fetch(`http://127.0.0.1:8000/menu/active/${s.organizationId}`)
-      .then((res) => res.json())
-      .then(async (menuData) => {
+    const loadData = async () => {
+      try {
+        // 1️⃣ Active menu
+        const menuRes = await fetch(
+          `http://127.0.0.1:8000/menu/active/${s.organizationId}`
+        );
+        const menuData = await menuRes.json();
+
         if (!menuData.active) {
           setMenu(null);
           setSubmitted(false);
-          return;
+        } else {
+          setMenu(menuData);
         }
 
-        setMenu(menuData);
-
-        // 2️⃣ Fetch student orders
+        // 2️⃣ Student previous orders (LAST 7 DAYS – backend handles)
         const orderRes = await fetch(
           `http://127.0.0.1:8000/orders/student/${s.userId}`
         );
         const orders = await orderRes.json();
         setHistory(orders);
 
-        // ✅ correct submit check (student + menu)
-        const already = orders.find(
-          (o) => o.menuId === menuData._id && o.studentId === s.userId
-        );
-        setSubmitted(!!already);
-      })
-      .catch(() => {
+        // 3️⃣ Check already submitted for THIS MENU
+        if (menuData?.active) {
+          const already = orders.some(
+            (o) => o.menuId === menuData._id && o.studentId === s.userId
+          );
+          setSubmitted(already);
+        }
+      } catch (err) {
+        console.error("Dashboard load error", err);
         setMenu(null);
+        setHistory([]);
         setSubmitted(false);
-      });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+    const interval = setInterval(() => {
+      loadData();
+    }, 15000);
+    return () => clearInterval(interval);
   }, [router]);
 
   /* ================= ACTIONS ================= */
@@ -99,8 +115,13 @@ export default function StudentDashboard() {
     }
 
     setSubmitted(true);
+    setSelection({}); 
     alert("Order submitted successfully");
   };
+
+  if (loading) {
+    return <p className="p-6">Loading...</p>;
+  }
 
   if (!student) return null;
 
@@ -182,7 +203,7 @@ export default function StudentDashboard() {
                   </div>
                 ))}
 
-                <Button varient="outline" className="w-full mt-4" onClick={submitOrder}>
+                <Button className="w-full mt-4" onClick={submitOrder}>
                   Submit Selection
                 </Button>
               </div>
@@ -193,7 +214,9 @@ export default function StudentDashboard() {
         {/* PREVIOUS ORDERS */}
         <Card>
           <CardBody>
-            <h2 className="text-xl font-bold mb-4">Previous Orders (Last 7)</h2>
+            <h2 className="text-xl font-bold mb-4">
+              Previous Orders (Last 7 Days)
+            </h2>
 
             {history.length === 0 && (
               <p className="text-gray-500">No previous orders found</p>
@@ -204,19 +227,19 @@ export default function StudentDashboard() {
                 key={order._id}
                 className="border rounded-lg p-4 mb-4 bg-white shadow-sm"
               >
-                {/* Date */}
                 <div className="text-sm font-semibold text-gray-800 mb-3">
-                  {new Date(order.createdAt).toDateString()}
+                  {new Date(order.createdAt).toLocaleString()}
                 </div>
 
-                {/* Items */}
                 <div className="space-y-2">
                   {order.items.map((i, idx) => (
                     <div
                       key={idx}
                       className="flex items-center justify-between text-sm"
                     >
-                      <span className="capitalize text-gray-700">{i.name}</span>
+                      <span className="capitalize font-bold text-gray-700">
+                        {i.name}
+                      </span>
 
                       <span
                         className={`px-2 py-1 rounded-full text-xs font-medium ${

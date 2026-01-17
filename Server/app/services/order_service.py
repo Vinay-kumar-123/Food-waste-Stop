@@ -83,7 +83,7 @@
 #         })
 #     )
 
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from app.db.mongodb import db
 from bson import ObjectId
 orders = db.orders
@@ -140,15 +140,22 @@ def submit_order(data: dict):
     orders.insert_one(order)
     return order
 
-def get_student_orders(student_id: str, limit: int = 7):
+
+
+def get_student_orders(student_id: str):
+    seven_days_ago = datetime.now(timezone.utc) - timedelta(days=30)
+
     data = list(
-        orders.find({"studentId": student_id})
-        .sort("createdAt", -1)
-        .limit(limit)
+        orders.find({
+            "studentId": student_id,
+            "createdAt": {"$gte": seven_days_ago}
+        }).sort("createdAt", -1)
     )
 
     for d in data:
-        d["_id"] = str(d["_id"])   # 🔑 stringify
+        d["_id"] = str(d["_id"])
+        d["createdAt"] = d["createdAt"].isoformat()  # 🔑 VERY IMPORTANT
+
     return data
 
 
@@ -168,5 +175,31 @@ def get_today_orders(org_id: str, menu_id: str):
         d["_id"] = str(d["_id"])
 
     return docs
+
+
+
+
+
+def get_item_wise_demand(org_id: str, menu_id: str):
+    
+
+    # 🔑 Fetch only current menu orders
+    order_list = list(
+        orders.find({
+            "organizationId": org_id,
+            "menuId": menu_id
+        })
+    )
+
+    demand = {}
+
+    for order in order_list:
+        for item in order.get("items", []):
+            if item.get("status") == "Eat":
+                name = item.get("name")
+                if name:
+                    demand[name] = demand.get(name, 0) + 1
+
+    return demand
 
 

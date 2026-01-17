@@ -5,12 +5,13 @@ from app.services.order_service import (
     get_student_orders
 )
 
+
 router = APIRouter(prefix="/orders", tags=["Orders"])
 
 
 @router.post("/submit")
 def submit(order: OrderCreate):
-    print("ORDER PAYLOAD RECEIVED:", order.model_dump())
+    
     saved = submit_order(order.model_dump())
 
     if not saved:
