@@ -203,7 +203,7 @@ export default function StudentDashboard() {
                   </div>
                 ))}
 
-                <Button className="w-full mt-4" onClick={submitOrder}>
+                <Button variant="outline" className="w-full mt-4" onClick={submitOrder}>
                   Submit Selection
                 </Button>
               </div>
