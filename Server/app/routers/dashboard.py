@@ -66,4 +66,3 @@ def today_summary(org_id: str, menu_id: str):
         ]
     }
 
-

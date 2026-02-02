@@ -1,12 +1,14 @@
-from fastapi import APIRouter
+from fastapi import APIRouter,  Depends
 from app.models.menu import MenuCreate
 from app.services.menu_service import create_menu, get_active_menu
+from app.core.auth_dependency import subscription_guard
+
 
 router = APIRouter(prefix="/menu", tags=["Menu"])
 
 
 @router.post("/upload")
-def upload_menu(menu: MenuCreate):
+def upload_menu(menu: MenuCreate, user=Depends(subscription_guard)):
     # ✅ FIX: model_dump() (Pydantic v2)
     data = menu.model_dump()
     created = create_menu(data)
@@ -30,4 +32,3 @@ def active_menu(org_id: str):
 
     menu["_id"] = str(menu["_id"])
     return menu
-

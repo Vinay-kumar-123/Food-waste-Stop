@@ -1,6 +1,7 @@
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import auth, organization ,  menu, orders, dashboard
+from app.routers import auth, organization ,  menu, orders, dashboard,subscription 
 
 app = FastAPI(title="Food Not Waste API")
 
@@ -20,6 +21,7 @@ app.include_router(organization.router)
 app.include_router(menu.router)
 app.include_router(orders.router)
 app.include_router(dashboard.router)
+app.include_router(subscription.router)
 @app.get("/")
 def root():
     return {"status": "Backend running"}

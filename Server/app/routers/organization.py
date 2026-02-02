@@ -11,4 +11,3 @@ def generate_organization_id():
         "organizationId": org_id
     }
 
-

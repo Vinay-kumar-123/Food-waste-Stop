@@ -69,4 +69,3 @@ def login(data: UserLogin):
             "organizationId": user.get("organizationId"),
         }
     }
-

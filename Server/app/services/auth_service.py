@@ -1,12 +1,36 @@
+
+
+from datetime import datetime, timedelta, timezone
 from app.db.mongodb import db
-from app.core.security import hash_password , verify_password
+from app.core.security import hash_password, verify_password
 
 users = db.users
 
 def create_user(data: dict):
-    password = data.pop("password")  
+    password = data.pop("password")
     data["password"] = hash_password(password)
     data["active"] = True
+
+    # 🔑 SUBSCRIPTION FIELDS (AUTO)
+    if data["type"] == "organization":
+        now = datetime.now(timezone.utc)
+
+        data["trialStart"] = now
+        data["trialEnd"] = now + timedelta(days=7)
+
+       # 🔑 ENSURE UTC (VERY IMPORTANT)
+        data["trialStart"] = data["trialStart"].astimezone(timezone.utc)
+        data["trialEnd"] = data["trialEnd"].astimezone(timezone.utc)
+
+        data["isSubscribed"] = False
+        data["subscriptionExpiry"] = None
+    else:
+        # student → free forever
+        data["trialStart"] = None
+        data["trialEnd"] = None
+        data["isSubscribed"] = True
+        data["subscriptionExpiry"] = None
+
     users.insert_one(data)
     return data
 

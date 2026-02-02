@@ -8,15 +8,12 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { authAPI } from "@/lib/api";
 
-export default function signup() {
+export default function StudentSignup() {
   const router = useRouter();
   const [isLogin, setIsLogin] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState({
-    message: "",
-    type: "",
-  });
+  const [error, setError] = useState({ message: "", type: "" });
 
   const [formData, setFormData] = useState({
     name: "",
@@ -28,73 +25,26 @@ export default function signup() {
   });
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-    setError("");
-  };
-  const handleApiError = (err) => {
-    // Network error
-    if (!err.response) {
-      return {
-        type: "network",
-        message: "Network error. Please check your internet connection.",
-      };
-    }
-
-    const status = err.response.status;
-    const msg = err.response.data?.message;
-
-    // Auth related
-    if (status === 401) {
-      return {
-        type: "auth",
-        message: msg || "Invalid credentials. Please try again.",
-      };
-    }
-
-    // Validation
-    if (status === 400) {
-      return {
-        type: "validation",
-        message: msg || "Please check your input details.",
-      };
-    }
-
-    // Server error
-    if (status >= 500) {
-      return {
-        type: "server",
-        message: "Server error. Please try again later.",
-      };
-    }
-
-    // Fallback
-    return {
-      type: "unknown",
-      message: msg || "Something went wrong. Please try again.",
-    };
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setError({ message: "", type: "" });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
     setLoading(true);
+    setError({ message: "", type: "" });
 
     try {
+      let response;
+
       if (!isLogin) {
         if (formData.password !== formData.confirmPassword) {
-          setError("Passwords don't match");
-          return;
-        }
-        if (!formData.organizationId) {
-          setError("Please enter your organization ID");
+          setError({ message: "Passwords don't match", type: "validation" });
+          setLoading(false);
           return;
         }
 
-        const response = await authAPI.signup({
+        response = await authAPI.signup({
           name: formData.name,
           userId: formData.userId,
           password: formData.password,
@@ -102,21 +52,24 @@ export default function signup() {
           mobile: formData.mobile,
           organizationId: formData.organizationId,
         });
-
-        localStorage.setItem("student", JSON.stringify(response.data.user));
       } else {
-        const response = await authAPI.login({
+        response = await authAPI.login({
           userId: formData.userId,
           password: formData.password,
         });
-
-        localStorage.setItem("student", JSON.stringify(response.data.user));
       }
+
+      /* 🔑🔥 MOST IMPORTANT FIX */
+      localStorage.setItem("token", response.data.token);
+      localStorage.setItem("role", response.data.user.type);
+      localStorage.setItem("student", JSON.stringify(response.data.user));
 
       router.push("/Dashboard/student");
     } catch (err) {
-      const parsedError = handleApiError(err);
-      setError(parsedError);
+      setError({
+        message: err.response?.data?.message || "Authentication failed",
+        type: "auth",
+      });
     } finally {
       setLoading(false);
     }
@@ -124,52 +77,21 @@ export default function signup() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-white flex flex-col">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-4 sm:px-6 lg:px-8 py-4">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 text-foreground hover:text-primary transition"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Home
+      <div className="bg-white border-b px-4 py-4">
+        <Link href="/" className="flex items-center gap-2">
+          <ArrowLeft size={16} /> Back to Home
         </Link>
       </div>
 
-      <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12">
+      <div className="flex-1 flex items-center justify-center px-4">
         <div className="w-full max-w-md">
-          {/* Logo */}
-          <div className="flex items-center justify-center gap-3 mb-8">
-            <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center">
-              <Leaf className="w-7 h-7 text-white" />
-            </div>
-            <span className="text-2xl font-bold text-foreground">
-              WasteNot+
-            </span>
-          </div>
-
-          {/* Card */}
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8">
-            <h1 className="text-2xl font-bold text-foreground mb-2">
+          <div className="bg-white p-8 rounded-2xl shadow border">
+            <h1 className="text-2xl font-bold mb-4">
               {isLogin ? "Student Login" : "Create Student Account"}
             </h1>
-            <p className="text-gray-600 mb-6">
-              {isLogin
-                ? "Sign in to your student account"
-                : "Join your college mess and start saving food"}
-            </p>
 
             {error.message && (
-              <div
-                className={`mb-4 p-4 rounded-lg text-sm border ${
-                  error.type === "network"
-                    ? "bg-yellow-50 border-yellow-200 text-yellow-800"
-                    : error.type === "auth"
-                    ? "bg-red-50 border-red-200 text-red-700"
-                    : error.type === "validation"
-                    ? "bg-orange-50 border-orange-200 text-orange-700"
-                    : "bg-red-50 border-red-200 text-red-700"
-                }`}
-              >
+              <div className="mb-4 p-3 bg-red-50 text-red-700 rounded">
                 {error.message}
               </div>
             )}
@@ -177,74 +99,39 @@ export default function signup() {
             <form onSubmit={handleSubmit} className="space-y-4">
               {!isLogin && (
                 <>
-                  <Input
-                    label="Full Name"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    placeholder="Your name"
-                    required
-                  />
-
-                  <Input
-                    label="Mobile Number"
-                    name="mobile"
-                    type="tel"
-                    value={formData.mobile}
-                    onChange={handleChange}
-                    placeholder="10-digit mobile number"
-                    required
-                  />
+                  <Input label="Full Name" name="name" onChange={handleChange} required />
+                  <Input label="Mobile" name="mobile" onChange={handleChange} required />
                   <Input
                     label="Organization ID"
                     name="organizationId"
-                    value={formData.organizationId}
                     onChange={handleChange}
-                    placeholder="Ask your mess manager"
                     required
                   />
-                  <p className="text-xs text-gray-500">
-                    This is provided by your college/mess
-                  </p>
                 </>
               )}
 
               <Input
-                label="Student Id"
+                label="Student ID"
                 name="userId"
-                type="text"
-                value={formData.userId}
                 onChange={handleChange}
-                placeholder="Enter your id"
                 required
               />
 
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Password
-                </label>
-                <div className="relative">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    name="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    placeholder="••••••••"
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-foreground"
-                  >
-                    {showPassword ? (
-                      <EyeOff className="w-5 h-5" />
-                    ) : (
-                      <Eye className="w-5 h-5" />
-                    )}
-                  </button>
-                </div>
+              <div className="relative">
+                <Input
+                  label="Password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  onChange={handleChange}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-9"
+                >
+                  {showPassword ? <EyeOff /> : <Eye />}
+                </button>
               </div>
 
               {!isLogin && (
@@ -252,60 +139,22 @@ export default function signup() {
                   label="Confirm Password"
                   name="confirmPassword"
                   type="password"
-                  value={formData.confirmPassword}
                   onChange={handleChange}
-                  placeholder="••••••••"
                   required
                 />
               )}
 
-              <Button
-                type="submit"
-                variant="primary"
-                size="lg"
-                className="w-full mt-6"
-                disabled={loading}
-              >
-                {loading
-                  ? "Processing..."
-                  : isLogin
-                  ? "Sign In"
-                  : "Create Account"}
+              <Button className="w-full mt-4" disabled={loading}>
+                {loading ? "Please wait..." : isLogin ? "Sign In" : "Create Account"}
               </Button>
             </form>
 
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <p className="text-center text-gray-600 text-sm">
-                {isLogin
-                  ? "Don't have an account?"
-                  : "Already have an account?"}
-              </p>
-              <button
-                onClick={() => {
-                  setIsLogin(!isLogin);
-                  setError("");
-                }}
-                className="w-full mt-2 px-4 py-2 text-primary font-semibold hover:bg-green-50 rounded-lg transition"
-              >
-                {isLogin ? "Sign Up Instead" : "Sign In Instead"}
-              </button>
-            </div>
-
-            <div className="mt-4 text-center text-xs text-gray-500">
-              By signing up, you agree to our Terms of Service
-            </div>
-          </div>
-
-          {/* Benefits */}
-          <div className="mt-8 grid grid-cols-2 gap-4">
-            <div className="bg-white rounded-lg p-4 text-center border border-gray-200">
-              <div className="text-2xl font-bold text-primary">7</div>
-              <p className="text-sm text-gray-600">Days Free Trial</p>
-            </div>
-            <div className="bg-white rounded-lg p-4 text-center border border-gray-200">
-              <div className="text-2xl font-bold text-primary">0</div>
-              <p className="text-sm text-gray-600">Credit Card Required</p>
-            </div>
+            <button
+              onClick={() => setIsLogin(!isLogin)}
+              className="mt-4 text-green-600 text-sm w-full"
+            >
+              {isLogin ? "Create new account" : "Already have an account?"}
+            </button>
           </div>
         </div>
       </div>

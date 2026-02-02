@@ -16,4 +16,3 @@ def create_token(data: dict):
     payload = data.copy()
     payload["exp"] = datetime.now(timezone.utc) + timedelta(days=7)
     return jwt.encode(payload, settings.JWT_SECRET, algorithm="HS256")
- 

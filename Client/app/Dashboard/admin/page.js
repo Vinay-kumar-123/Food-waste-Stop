@@ -3,9 +3,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Leaf, LogOut } from "lucide-react";
+import { Leaf, LogOut, Crown } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody } from "@/components/ui/Card";
+import { subscriptionAPI } from "@/lib/api";
+import UpgradeButton from "@/components/UpgradeButton";
 
 export default function OrganizationDashboard() {
   const router = useRouter();
@@ -13,15 +15,28 @@ export default function OrganizationDashboard() {
   const [organization, setOrganization] = useState(null);
   const [menuItems, setMenuItems] = useState([]);
   const [item, setItem] = useState({ name: "", price: "" });
+  const [canUsePremium, setCanUsePremium] = useState(true);
 
-  const [summary, setSummary] = useState({
-    orders: [],
-  });
-
+  const [summary, setSummary] = useState({ orders: [] });
   const [itemDemand, setItemDemand] = useState({});
 
-  /* ================= LOAD ORG ================= */
+  // 🔑 IMPORTANT: control auto refresh
+  const [refreshDashboard, setRefreshDashboard] = useState(true);
 
+  /* ================= SUBSCRIPTION STATUS ================= */
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    subscriptionAPI
+      .status({
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => setCanUsePremium(res.data.allowed))
+      .catch(() => setCanUsePremium(false));
+  }, []);
+
+  /* ================= LOAD ORGANIZATION ================= */
   useEffect(() => {
     const stored = localStorage.getItem("organization");
     if (!stored) {
@@ -31,23 +46,24 @@ export default function OrganizationDashboard() {
 
     const org = JSON.parse(stored);
     setOrganization(org);
+  }, [router]);
 
-    // 🔹 First load
-    loadDashboard(org.organizationId);
+  /* ================= DASHBOARD AUTO REFRESH ================= */
+  useEffect(() => {
+    if (!organization || !refreshDashboard) return;
 
-    // 🔁 Auto refresh every 15 seconds
+    loadDashboard(organization.organizationId);
+
     const interval = setInterval(() => {
-      loadDashboard(org.organizationId);
+      loadDashboard(organization.organizationId);
     }, 15000);
 
-    // 🔴 Cleanup (VERY IMPORTANT)
     return () => clearInterval(interval);
-  }, []);
+  }, [organization, refreshDashboard]);
 
   /* ================= LOAD DASHBOARD ================= */
   const loadDashboard = async (orgId) => {
     try {
-      // 1️⃣ active menu
       const menuRes = await fetch(`http://127.0.0.1:8000/menu/active/${orgId}`);
       const menu = await menuRes.json();
 
@@ -57,35 +73,26 @@ export default function OrganizationDashboard() {
         return;
       }
 
-      // 2️⃣ student summary
       const summaryRes = await fetch(
-        `http://127.0.0.1:8000/dashboard/org/today/${orgId}/${menu._id}`
+        `http://127.0.0.1:8000/dashboard/org/today/${orgId}/${menu._id}`,
       );
       const data = await summaryRes.json();
       setSummary(data);
 
-      // 3️⃣ item-wise demand calculation
       const demand = {};
-      data.orders.forEach((o) => {
+      data.orders.forEach((o) =>
         o.items.forEach((i) => {
           if (i.status === "Eat") {
             demand[i.name] = (demand[i.name] || 0) + 1;
           }
-        });
-      });
-
+        }),
+      );
       setItemDemand(demand);
     } catch (err) {
       console.error("Dashboard error", err);
       setSummary({ orders: [] });
       setItemDemand({});
     }
-  };
-
-  /* ================= LOGOUT ================= */
-  const handleLogout = () => {
-    localStorage.removeItem("organization");
-    router.push("/");
   };
 
   /* ================= MENU ================= */
@@ -96,7 +103,7 @@ export default function OrganizationDashboard() {
   };
 
   const uploadMenu = async () => {
-    if (!menuItems.length) return;
+    if (!menuItems.length || !canUsePremium) return;
 
     await fetch("http://127.0.0.1:8000/menu/upload", {
       method: "POST",
@@ -111,6 +118,11 @@ export default function OrganizationDashboard() {
     alert("Menu uploaded successfully");
     setMenuItems([]);
     loadDashboard(organization.organizationId);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("organization");
+    router.push("/");
   };
 
   if (!organization) return null;
@@ -137,6 +149,26 @@ export default function OrganizationDashboard() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-8 space-y-8">
+        {/* 🚨 UPGRADE BANNER */}
+        {!canUsePremium && (
+          <div className="bg-red-50 border border-red-300 rounded-lg p-5 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Crown className="text-red-600" />
+              <p className="text-red-700 font-semibold">
+                Trial expired. Upgrade your profile — ₹1500/month only.
+              </p>
+            </div>
+
+            <UpgradeButton
+              onSuccess={() => {
+                // 🔑 STOP interval while payment finishes
+                setRefreshDashboard(false);
+                window.location.reload();
+              }}
+            />
+          </div>
+        )}
+
         {/* ================= ITEM DEMAND ================= */}
         <Card>
           <CardBody>
@@ -148,10 +180,8 @@ export default function OrganizationDashboard() {
               <div className="grid md:grid-cols-3 gap-4">
                 {Object.entries(itemDemand).map(([name, count]) => (
                   <div key={name} className="border rounded-lg p-4 bg-green-50">
-                    <p className="font-semibold capitalize text-lg">{name}</p>
-                    <p className="font-bold text-gray-600">
-                      {count} students will eat
-                    </p>
+                    <p className="font-semibold capitalize">{name}</p>
+                    <p className="text-gray-700">{count} students will eat</p>
                   </div>
                 ))}
               </div>
@@ -164,40 +194,39 @@ export default function OrganizationDashboard() {
           <CardBody>
             <h2 className="font-semibold text-lg mb-4">Build Today’s Menu</h2>
 
-            {/* Add Item Section */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-              {" "}
-              <div>
-                <label className="text-sm text-gray-600">Item Name</label>{" "}
-                <input
-                  placeholder="e.g. Rice, Dal"
-                  className="border p-2 rounded w-full mt-1"
-                  value={item.name}
-                  onChange={(e) => setItem({ ...item, name: e.target.value })}
-                />
-              </div>
-              <div>
-                <label className="text-sm text-gray-600">Price (₹)</label>
-                <input
-                  placeholder="e.g. 40"
-                  type="number"
-                  className="border p-2 rounded w-full mt-1"
-                  value={item.price}
-                  onChange={(e) => setItem({ ...item, price: +e.target.value })}
-                />
-              </div>
+            {!canUsePremium && (
+              <p className="text-red-600 mb-4 font-medium">
+                Subscription required to upload menu
+              </p>
+            )}
+
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              <input
+                placeholder="Item Name"
+                className="border p-2 rounded"
+                value={item.name}
+                disabled={!canUsePremium}
+                onChange={(e) => setItem({ ...item, name: e.target.value })}
+              />
+              <input
+                placeholder="Price"
+                type="number"
+                className="border p-2 rounded"
+                value={item.price}
+                disabled={!canUsePremium}
+                onChange={(e) => setItem({ ...item, price: +e.target.value })}
+              />
             </div>
 
             <Button
-              variant="outline"
               size="sm"
-              className="mb-4"
+              variant="outline"
               onClick={addItem}
+              disabled={!canUsePremium}
             >
               + Add Item
             </Button>
 
-            {/* Menu Preview */}
             {menuItems.length > 0 && (
               <div className="border rounded-lg p-3 bg-gray-100 space-y-2">
                 <p className="text-sm font-medium text-blue-700 mb-2">
@@ -221,7 +250,7 @@ export default function OrganizationDashboard() {
             {/* Upload CTA */}
             {menuItems.length > 0 && (
               <div className="flex justify-end mt-5">
-                <Button variant="outline" className="px-8" onClick={uploadMenu}>
+                <Button variant="outline" className="px-8" onClick={uploadMenu} disabled={!canUsePremium}>
                   Upload Menu
                 </Button>
               </div>
@@ -263,7 +292,7 @@ export default function OrganizationDashboard() {
                           {i.status}
                         </td>
                       </tr>
-                    ))
+                    )),
                   )}
                 </tbody>
               </table>

@@ -31,4 +31,3 @@ def student_orders(student_id: str):
         d["_id"] = str(d["_id"])
 
     return data
-

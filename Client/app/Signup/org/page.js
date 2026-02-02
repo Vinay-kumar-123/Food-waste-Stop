@@ -13,11 +13,11 @@ export default function OrganizationSignup() {
 
   const [isLogin, setIsLogin] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [copiedOrgId, setCopiedOrgId] = useState(false);
+  const [organizationId, setOrganizationId] = useState("");
+  const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // 🔑 FORM DATA
   const [formData, setFormData] = useState({
     name: "",
     userId: "",
@@ -25,96 +25,82 @@ export default function OrganizationSignup() {
     confirmPassword: "",
   });
 
-  // 🔑 BACKEND GENERATED ORG ID
-  const [organizationId, setOrganizationId] = useState("");
-
-  /* =========================
-     FETCH ORG ID FROM BACKEND
-     ========================= */
+  /* 🔑 GET ORG ID */
   useEffect(() => {
     if (!isLogin) {
       organizationAPI
         .generateOrgId()
         .then((res) => setOrganizationId(res.data.organizationId))
-        .catch(() => setError("Failed to generate Organization ID"));
+        .catch(() => setError("Failed to generate organization ID"));
     }
   }, [isLogin]);
 
-  /* =========================
-     HANDLERS
-     ========================= */
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData({ ...formData, [e.target.name]: e.target.value });
     setError("");
-  };
-
-  const handleCopyOrgId = () => {
-    navigator.clipboard.writeText(organizationId);
-    setCopiedOrgId(true);
-    setTimeout(() => setCopiedOrgId(false), 2000);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
     setLoading(true);
+    setError("");
 
     try {
+      let response;
+
       if (!isLogin) {
         if (formData.password !== formData.confirmPassword) {
           setError("Passwords do not match");
+          setLoading(false);
           return;
         }
 
-        const response = await authAPI.signup({
+        response = await authAPI.signup({
           name: formData.name,
           userId: formData.userId,
           password: formData.password,
-          type: "organization",          // 🔒 FIXED
-          organizationId: organizationId // 🔑 BACKEND GENERATED
+          type: "organization",
+          organizationId,
         });
-
-        localStorage.setItem(
-          "organization",
-          JSON.stringify(response.data.user)
-        );
       } else {
-        const response = await authAPI.login({
-          userId: formData.userId, // ✅ CORRECT
+        response = await authAPI.login({
+          userId: formData.userId,
           password: formData.password,
         });
-
-        localStorage.setItem(
-          "organization",
-          JSON.stringify(response.data.user)
-        );
       }
+
+      /* 🔥 MOST IMPORTANT FIX */
+      localStorage.setItem("token", response.data.token);
+      localStorage.setItem("role", response.data.user.type);
+      localStorage.setItem(
+        "organization",
+        JSON.stringify(response.data.user)
+      );
 
       router.push("/Dashboard/admin");
     } catch (err) {
-      setError(
-        err.response?.data?.message || "Something went wrong"
-      );
+      setError(err.response?.data?.message || "Authentication failed");
     } finally {
       setLoading(false);
     }
   };
 
-  /* =========================
-     UI
-     ========================= */
+  const copyOrgId = () => {
+    navigator.clipboard.writeText(organizationId);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-white flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-white">
       <div className="bg-white border-b px-4 py-4">
-        <Link href="/" className="flex items-center gap-2 text-sm">
-          <ArrowLeft className="w-4 h-4" /> Back to Home
+        <Link href="/" className="flex items-center gap-2">
+          <ArrowLeft size={16} /> Back to Home
         </Link>
       </div>
 
-      <div className="flex-1 flex items-center justify-center px-4">
-        <div className="w-full max-w-md">
-
+      <div className="flex items-center justify-center px-4 py-10">
+        <div className="w-full max-w-md bg-white p-8 rounded-xl shadow border">
           <div className="flex justify-center items-center gap-2 mb-6">
             <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
               <Leaf className="text-white" />
@@ -122,95 +108,91 @@ export default function OrganizationSignup() {
             <h1 className="text-xl font-bold">Food Not Waste</h1>
           </div>
 
-          <div className="bg-white p-6 rounded-xl border shadow">
-            <h2 className="text-xl font-bold mb-2">
-              {isLogin ? "Organization Login" : "Register Organization"}
-            </h2>
+          <h2 className="text-xl font-bold mb-3">
+            {isLogin ? "Organization Login" : "Register Organization"}
+          </h2>
 
-            {error && (
-              <div className="mb-4 text-red-600 text-sm">{error}</div>
-            )}
+          {error && (
+            <div className="mb-4 text-sm bg-red-50 text-red-700 p-3 rounded">
+              {error}
+            </div>
+          )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-
-              {!isLogin && (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {!isLogin && (
+              <>
                 <Input
                   label="Organization Name"
                   name="name"
-                  value={formData.name}
                   onChange={handleChange}
                   required
                 />
-              )}
 
-              {!isLogin && (
                 <div className="bg-blue-50 p-3 rounded-lg">
                   <p className="text-sm font-medium mb-1">
                     Organization ID (Share with students)
                   </p>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 items-center">
                     <div className="flex-1 bg-white px-3 py-2 rounded border font-mono">
                       {organizationId}
                     </div>
-                    <button type="button" onClick={handleCopyOrgId}>
-                      {copiedOrgId ? <Check /> : <Copy />}
+                    <button type="button" onClick={copyOrgId}>
+                      {copied ? <Check /> : <Copy />}
                     </button>
                   </div>
                 </div>
-              )}
+              </>
+            )}
 
+            <Input
+              label="Admin Login ID"
+              name="userId"
+              onChange={handleChange}
+              required
+            />
+
+            <div className="relative">
               <Input
-                label="Admin / Mess Login ID"
-                name="userId"
-                value={formData.userId}
+                label="Password"
+                name="password"
+                type={showPassword ? "text" : "password"}
                 onChange={handleChange}
                 required
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-9"
+              >
+                {showPassword ? <EyeOff /> : <Eye />}
+              </button>
+            </div>
 
-              <div>
-                <label className="text-sm font-medium">Password</label>
-                <div className="relative">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    name="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    className="w-full border px-3 py-2 rounded"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-2 top-2"
-                  >
-                    {showPassword ? <EyeOff /> : <Eye />}
-                  </button>
-                </div>
-              </div>
+            {!isLogin && (
+              <Input
+                label="Confirm Password"
+                name="confirmPassword"
+                type="password"
+                onChange={handleChange}
+                required
+              />
+            )}
 
-              {!isLogin && (
-                <Input
-                  label="Confirm Password"
-                  name="confirmPassword"
-                  type="password"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  required
-                />
-              )}
+            <Button className="w-full" disabled={loading}>
+              {loading
+                ? "Please wait..."
+                : isLogin
+                ? "Login"
+                : "Create Account"}
+            </Button>
+          </form>
 
-              <Button className="w-full" disabled={loading}>
-                {loading ? "Please wait..." : isLogin ? "Login" : "Create Account"}
-              </Button>
-            </form>
-
-            <button
-              onClick={() => setIsLogin(!isLogin)}
-              className="mt-4 text-sm text-primary w-full"
-            >
-              {isLogin ? "Create new account" : "Already have an account?"}
-            </button>
-          </div>
+          <button
+            onClick={() => setIsLogin(!isLogin)}
+            className="mt-4 text-sm text-primary w-full"
+          >
+            {isLogin ? "Create new account" : "Already have an account?"}
+          </button>
         </div>
       </div>
     </div>
