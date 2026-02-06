@@ -58,8 +58,9 @@ export const dashboardAPI = {
 /* 🔔 SUBSCRIPTION */
 export const subscriptionAPI = {
   status: () => apiClient.get("/subscription/status"),
+  info: () => apiClient.get("/subscription/info"),
   createOrder: () => apiClient.post("/subscription/create-order"),
-  verifyPayment: (data) =>
-    apiClient.post("/subscription/verify-payment", data),
+  verifyPayment: (data) => apiClient.post("/subscription/verify-payment", data),
 };
+
 

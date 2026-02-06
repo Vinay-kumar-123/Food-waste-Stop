@@ -8,4 +8,4 @@ class MenuItem(BaseModel):
 class MenuCreate(BaseModel):
     organizationId: str
     items: List[MenuItem]
-    validMinutes: int = 120   # default 1 hour
+    validMinutes: int = 60   # default 1 hour

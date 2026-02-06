@@ -26,18 +26,28 @@ def get_current_user(
     return user
 
 
-
 def subscription_guard(user=Depends(get_current_user)):
     if user["type"] == "student":
         return user
 
     now = datetime.now(timezone.utc)
 
-    if user.get("trialEnd") and now <= user["trialEnd"]:
-        return user
+    # 🔹 Trial check
+    trial_end = user.get("trialEnd")
+    if trial_end:
+        if trial_end.tzinfo is None:
+            trial_end = trial_end.replace(tzinfo=timezone.utc)
 
-    if user.get("isSubscribed") and user.get("subscriptionExpiry"):
-        if now <= user["subscriptionExpiry"]:
+        if now <= trial_end:
+            return user
+
+    # 🔹 Subscription check
+    expiry = user.get("subscriptionExpiry")
+    if user.get("isSubscribed") and expiry:
+        if expiry.tzinfo is None:
+            expiry = expiry.replace(tzinfo=timezone.utc)
+
+        if now <= expiry:
             return user
 
     raise HTTPException(

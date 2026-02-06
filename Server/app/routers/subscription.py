@@ -16,24 +16,21 @@ def status(user=Depends(get_current_user)):
         return {"allowed": True}
 
     trial_end = user.get("trialEnd")
+    if trial_end and trial_end.tzinfo is None:
+        trial_end = trial_end.replace(tzinfo=timezone.utc)
 
-    if trial_end:
-        # 🔑 normalize timezone
-        if trial_end.tzinfo is None:
-            trial_end = trial_end.replace(tzinfo=timezone.utc)
+    if trial_end and now <= trial_end:
+        return {"allowed": True}
 
-        if now <= trial_end:
-            return {"allowed": True}
+    expiry = user.get("subscriptionExpiry")
+    if expiry and expiry.tzinfo is None:
+        expiry = expiry.replace(tzinfo=timezone.utc)
 
-    if user.get("isSubscribed") and user.get("subscriptionExpiry"):
-        expiry = user["subscriptionExpiry"]
-        if expiry.tzinfo is None:
-            expiry = expiry.replace(tzinfo=timezone.utc)
-
-        if now <= expiry:
-            return {"allowed": True}
+    if user.get("isSubscribed") and expiry and now <= expiry:
+        return {"allowed": True}
 
     return {"allowed": False}
+
 
 @router.post("/create-order")
 def create_payment_order(user=Depends(get_current_user)):
@@ -66,3 +63,49 @@ def verify_payment(data: dict, user=Depends(get_current_user)):
 
 
     return {"message": "Subscription activated"}
+
+
+@router.get("/info")
+def subscription_info(user=Depends(get_current_user)):
+    now = datetime.now(timezone.utc)
+
+    if user["type"] == "student":
+        return {
+            "plan": "FREE",
+            "status": "ACTIVE",
+            "days_left": None
+        }
+
+    # normalize datetimes (important)
+    trial_end = user.get("trialEnd")
+    if trial_end and trial_end.tzinfo is None:
+        trial_end = trial_end.replace(tzinfo=timezone.utc)
+
+    expiry = user.get("subscriptionExpiry")
+    if expiry and expiry.tzinfo is None:
+        expiry = expiry.replace(tzinfo=timezone.utc)
+
+    # trial
+    if trial_end and now <= trial_end:
+        days_left = (trial_end - now).days
+        return {
+            "plan": "TRIAL",
+            "status": "ACTIVE",
+            "days_left": max(days_left, 0)
+        }
+
+    # paid
+    if user.get("isSubscribed") and expiry and now <= expiry:
+        days_left = (expiry - now).days
+        return {
+            "plan": "PREMIUM",
+            "status": "ACTIVE",
+            "days_left": max(days_left, 0)
+        }
+
+    # expired
+    return {
+        "plan": "NONE",
+        "status": "EXPIRED",
+        "days_left": 0
+    }

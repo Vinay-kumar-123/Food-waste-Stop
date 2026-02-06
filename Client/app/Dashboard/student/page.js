@@ -143,9 +143,9 @@ export default function StudentDashboard() {
             </div>
           </Link>
 
-          <button onClick={handleLogout} className="flex gap-2 items-center">
+          <Button  variant="outline" onClick={handleLogout} className="flex gap-2 items-center cursor-pointer">
             <LogOut className="w-4 h-4" /> Logout
-          </button>
+          </Button>
         </div>
       </header>
 

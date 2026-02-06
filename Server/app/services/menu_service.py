@@ -21,6 +21,8 @@ def create_menu(data: dict):
 
     result = menus.insert_one(menu)
     menu["_id"] = str(result.inserted_id)   # 🔑 STRING ONLY
+    
+
     return menu
 
 

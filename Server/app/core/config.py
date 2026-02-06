@@ -9,6 +9,7 @@ class Settings :
         self.JWT_SECRET: str = os.getenv("JWT_SECRET") or ""
         self.RAZORPAY_KEY_ID: str = os.getenv("RAZORPAY_KEY_ID") or ""
         self.RAZORPAY_SECRET: str = os.getenv("RAZORPAY_SECRET") or ""
+        self.RAZORPAY_WEBHOOK_SECRET: str = os.getenv("RAZORPAY_WEBHOOK_SECRET") or ""
         if not self.MONGO_URI:
             raise RuntimeError("MONGO_URI missing in .env")
         if not self.DB_NAME:

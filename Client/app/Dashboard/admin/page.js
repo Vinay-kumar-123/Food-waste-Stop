@@ -8,10 +8,11 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardBody } from "@/components/ui/Card";
 import { subscriptionAPI } from "@/lib/api";
 import UpgradeButton from "@/components/UpgradeButton";
+import SubscriptionBadge from "@/components/SubscriptionBadge";
 
 export default function OrganizationDashboard() {
   const router = useRouter();
-
+  const [subInfo, setSubInfo] = useState(null);
   const [organization, setOrganization] = useState(null);
   const [menuItems, setMenuItems] = useState([]);
   const [item, setItem] = useState({ name: "", price: "" });
@@ -34,6 +35,13 @@ export default function OrganizationDashboard() {
       })
       .then((res) => setCanUsePremium(res.data.allowed))
       .catch(() => setCanUsePremium(false));
+  }, []);
+
+  useEffect(() => {
+    subscriptionAPI
+      .info()
+      .then((res) => setSubInfo(res.data))
+      .catch(() => setSubInfo(null));
   }, []);
 
   /* ================= LOAD ORGANIZATION ================= */
@@ -105,15 +113,30 @@ export default function OrganizationDashboard() {
   const uploadMenu = async () => {
     if (!menuItems.length || !canUsePremium) return;
 
-    await fetch("http://127.0.0.1:8000/menu/upload", {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("Session expired. Please login again.");
+      return;
+    }
+
+    const res = await fetch("http://127.0.0.1:8000/menu/upload", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`, // 🔥 THIS WAS MISSING
+      },
       body: JSON.stringify({
         organizationId: organization.organizationId,
         items: menuItems,
         validMinutes: 60,
       }),
     });
+
+    if (!res.ok) {
+      const err = await res.json();
+      alert(err.detail || "Menu upload failed");
+      return;
+    }
 
     alert("Menu uploaded successfully");
     setMenuItems([]);
@@ -141,10 +164,14 @@ export default function OrganizationDashboard() {
               </p>
             </div>
           </Link>
-
-          <button onClick={handleLogout} className="flex gap-2 items-center">
-            <LogOut size={16} /> Logout
-          </button>
+          <div className="flex items-center gap-4">
+            <SubscriptionBadge info={subInfo} />
+           
+          </div>
+           <Button  variant="outline" onClick={handleLogout} className="flex gap-2 items-center cursor-pointer">
+              <LogOut size={16} /> Logout
+            </Button>
+          
         </div>
       </header>
 
@@ -250,7 +277,12 @@ export default function OrganizationDashboard() {
             {/* Upload CTA */}
             {menuItems.length > 0 && (
               <div className="flex justify-end mt-5">
-                <Button variant="outline" className="px-8" onClick={uploadMenu} disabled={!canUsePremium}>
+                <Button
+                  variant="outline"
+                  className="px-8"
+                  onClick={uploadMenu}
+                  disabled={!canUsePremium}
+                >
                   Upload Menu
                 </Button>
               </div>

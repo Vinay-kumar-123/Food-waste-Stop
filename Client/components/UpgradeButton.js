@@ -2,7 +2,8 @@
 
 import { subscriptionAPI } from "@/lib/api";
 
-export default function UpgradeButton({ onSuccess }) {
+export default function UpgradeButton() {
+
   const loadRazorpay = () =>
     new Promise((resolve) => {
       if (window.Razorpay) return resolve(true);
@@ -14,36 +15,48 @@ export default function UpgradeButton({ onSuccess }) {
     });
 
   const handleUpgrade = async () => {
-    const loaded = await loadRazorpay();
-    if (!loaded) return alert("Razorpay failed to load");
-
-    try {
-      const { data: order } = await subscriptionAPI.createOrder();
-
-      const rzp = new window.Razorpay({
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-        amount: order.amount,
-        currency: "INR",
-        order_id: order.id,
-        name: "Food Not Waste",
-        description: "Organisation Subscription",
-        handler: async (res) => {
-          await subscriptionAPI.verifyPayment({
-            razorpay_order_id: res.razorpay_order_id,
-            razorpay_payment_id: res.razorpay_payment_id,
-            razorpay_signature: res.razorpay_signature,
-          });
-
-          alert("✅ Subscription Activated");
-          onSuccess(); // 🔑 IMPORTANT
-        },
-        theme: { color: "#16a34a" },
-      });
-
-      rzp.open();
-    } catch {
-      alert("Payment failed");
+    const ok = await loadRazorpay();
+    if (!ok) {
+      alert("Razorpay SDK failed to load");
+      return;
     }
+
+    // 🔑 organization data from localStorage
+    const org = JSON.parse(localStorage.getItem("organization"));
+    if (!org) {
+      alert("Please login again");
+      return;
+    }
+
+    // 1️⃣ create order
+    const orderRes = await subscriptionAPI.createOrder();
+    const order = orderRes.data;
+
+    // 2️⃣ Razorpay popup
+    const options = {
+      key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+      amount: order.amount,
+      currency: "INR",
+      order_id: order.id,
+
+      name: "Food Not Waste",
+      description: "Monthly Organisation Subscription",
+
+      // 🔥🔥 THIS IS THE FIX 🔥🔥
+      notes: {
+        userId: org.userId,   // 👈 VERY IMPORTANT
+      },
+
+      handler: async function () {
+        alert("✅ Payment successful. Subscription will activate shortly.");
+        window.location.reload();
+      },
+
+      theme: { color: "#16a34a" },
+    };
+
+    const rzp = new window.Razorpay(options);
+    rzp.open();
   };
 
   return (
