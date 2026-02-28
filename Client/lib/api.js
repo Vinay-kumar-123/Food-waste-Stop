@@ -64,3 +64,6 @@ export const subscriptionAPI = {
 };
 
 
+export const adminAPI = {
+  stats: () => apiClient.get("/admin/stats"),
+};

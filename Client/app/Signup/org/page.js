@@ -178,7 +178,7 @@ export default function OrganizationSignup() {
               />
             )}
 
-            <Button className="w-full" disabled={loading}>
+            <Button variant="outline" className="w-full" disabled={loading}>
               {loading
                 ? "Please wait..."
                 : isLogin
@@ -187,12 +187,13 @@ export default function OrganizationSignup() {
             </Button>
           </form>
 
-          <button
+          <Button
+            variant="outline"
             onClick={() => setIsLogin(!isLogin)}
             className="mt-4 text-sm text-primary w-full"
           >
             {isLogin ? "Create new account" : "Already have an account?"}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

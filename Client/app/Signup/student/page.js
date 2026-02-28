@@ -144,17 +144,18 @@ export default function StudentSignup() {
                 />
               )}
 
-              <Button className="w-full mt-4" disabled={loading}>
+              <Button variant="outline" className="w-full mt-4" disabled={loading}>
                 {loading ? "Please wait..." : isLogin ? "Sign In" : "Create Account"}
               </Button>
             </form>
 
-            <button
+            <Button
+              variant="outline"
               onClick={() => setIsLogin(!isLogin)}
               className="mt-4 text-green-600 text-sm w-full"
             >
               {isLogin ? "Create new account" : "Already have an account?"}
-            </button>
+            </Button>
           </div>
         </div>
       </div>
