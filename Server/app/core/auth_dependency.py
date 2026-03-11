@@ -10,7 +10,7 @@ security = HTTPBearer()
 def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security)
 ):
-    print("🔥 AUTH HEADER TOKEN:", credentials.credentials)
+    
 
     token = credentials.credentials
     try:
