@@ -11,7 +11,7 @@ client = razorpay.Client(
 # 🔹 Create payment order
 def create_order():
     return client.order.create({
-        "amount": 1500 * 100,
+        "amount": 1000 * 100,
         "currency": "INR",
         "payment_capture": 1
     })

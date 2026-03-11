@@ -187,7 +187,7 @@ export default function OrganizationDashboard() {
             <div className="flex items-center gap-3">
               <Crown className="text-red-600" />
               <p className="text-red-700 font-semibold">
-                Trial expired. Upgrade your profile — ₹1500/month only.
+                Trial expired. Upgrade your profile — ₹1000/month only.
               </p>
             </div>
 
