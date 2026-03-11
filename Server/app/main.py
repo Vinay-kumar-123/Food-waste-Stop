@@ -9,9 +9,9 @@ app = FastAPI(title="Food Not Waste API")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000"
+        "https://serviq-platform.vercel.app"
     ],
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -30,3 +30,4 @@ app.include_router(admin.router)
 @app.get("/")
 def root():
     return {"status": "Backend running"}
+
