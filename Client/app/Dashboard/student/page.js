@@ -26,13 +26,18 @@ export default function StudentDashboard() {
     }
 
     const s = JSON.parse(stored);
+    if (s.type !== "student") {
+      alert("Invalid login. Please login as student.");
+      router.push("/Signup/student");
+      return;
+    }
     setStudent(s);
 
     const loadData = async () => {
       try {
         // 1️⃣ Active menu
         const menuRes = await fetch(
-          `http://127.0.0.1:8000/menu/active/${s.organizationId}`
+          `https://food-waste-stop-fastapi.onrender.com/menu/active/${s.organizationId}`,
         );
         const menuData = await menuRes.json();
 
@@ -45,7 +50,7 @@ export default function StudentDashboard() {
 
         // 2️⃣ Student previous orders (LAST 7 DAYS – backend handles)
         const orderRes = await fetch(
-          `http://127.0.0.1:8000/orders/student/${s.userId}`
+          `https://food-waste-stop-fastapi.onrender.com/orders/student/${s.userId}`,
         );
         const orders = await orderRes.json();
         setHistory(orders);
@@ -53,7 +58,7 @@ export default function StudentDashboard() {
         // 3️⃣ Check already submitted for THIS MENU
         if (menuData?.active) {
           const already = orders.some(
-            (o) => o.menuId === menuData._id && o.studentId === s.userId
+            (o) => o.menuId === menuData._id && o.studentId === s.userId,
           );
           setSubmitted(already);
         }
@@ -97,17 +102,20 @@ export default function StudentDashboard() {
       return;
     }
 
-    const res = await fetch("http://127.0.0.1:8000/orders/submit", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        studentId: student.userId,
-        studentName: student.name,
-        organizationId: student.organizationId,
-        menuId: menu._id,
-        items,
-      }),
-    });
+    const res = await fetch(
+      "https://food-waste-stop-fastapi.onrender.com/orders/submit",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          studentId: student.userId,
+          studentName: student.name,
+          organizationId: student.organizationId,
+          menuId: menu._id,
+          items,
+        }),
+      },
+    );
 
     if (!res.ok) {
       alert("You already submitted for this menu");
@@ -115,7 +123,7 @@ export default function StudentDashboard() {
     }
 
     setSubmitted(true);
-    setSelection({}); 
+    setSelection({});
     alert("Order submitted successfully");
   };
 
@@ -143,7 +151,11 @@ export default function StudentDashboard() {
             </div>
           </Link>
 
-          <Button  variant="outline" onClick={handleLogout} className="flex gap-2 items-center cursor-pointer">
+          <Button
+            variant="outline"
+            onClick={handleLogout}
+            className="flex gap-2 items-center cursor-pointer"
+          >
             <LogOut className="w-4 h-4" /> Logout
           </Button>
         </div>
@@ -203,7 +215,11 @@ export default function StudentDashboard() {
                   </div>
                 ))}
 
-                <Button variant="outline" className="w-full mt-4" onClick={submitOrder}>
+                <Button
+                  variant="outline"
+                  className="w-full mt-4"
+                  onClick={submitOrder}
+                >
                   Submit Selection
                 </Button>
               </div>

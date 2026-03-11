@@ -53,6 +53,11 @@ export default function OrganizationDashboard() {
     }
 
     const org = JSON.parse(stored);
+    if (org.type !== "organization") {
+    alert("Invalid login. Please login as organization.");
+    router.push("/Signup/org");
+    return;
+  }
     setOrganization(org);
   }, [router]);
 
@@ -72,7 +77,7 @@ export default function OrganizationDashboard() {
   /* ================= LOAD DASHBOARD ================= */
   const loadDashboard = async (orgId) => {
     try {
-      const menuRes = await fetch(`http://127.0.0.1:8000/menu/active/${orgId}`);
+      const menuRes = await fetch(`https://food-waste-stop-fastapi.onrender.com/menu/active/${orgId}`);
       const menu = await menuRes.json();
 
       if (!menu || !menu._id) {
@@ -82,7 +87,7 @@ export default function OrganizationDashboard() {
       }
 
       const summaryRes = await fetch(
-        `http://127.0.0.1:8000/dashboard/org/today/${orgId}/${menu._id}`,
+        `https://food-waste-stop-fastapi.onrender.com/dashboard/org/today/${orgId}/${menu._id}`,
       );
       const data = await summaryRes.json();
       setSummary(data);
@@ -119,7 +124,7 @@ export default function OrganizationDashboard() {
       return;
     }
 
-    const res = await fetch("http://127.0.0.1:8000/menu/upload", {
+    const res = await fetch("https://food-waste-stop-fastapi.onrender.com/menu/upload", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
