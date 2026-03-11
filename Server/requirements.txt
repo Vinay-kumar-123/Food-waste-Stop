@@ -1,6 +1,9 @@
+
 fastapi
 uvicorn
 pymongo
 python-dotenv
-passlib[bcrypt]
+passlib[argon2]
 python-jose
+razorpay
+python-multipart
