@@ -231,7 +231,7 @@ export default function StudentDashboard() {
         <Card>
           <CardBody>
             <h2 className="text-xl font-bold mb-4">
-              Previous Orders (Last 7 Days)
+              Previous Orders (Last 30 Days)
             </h2>
 
             {history.length === 0 && (
@@ -277,3 +277,4 @@ export default function StudentDashboard() {
     </div>
   );
 }
+
