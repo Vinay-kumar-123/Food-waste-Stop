@@ -52,5 +52,5 @@ def subscription_guard(user=Depends(get_current_user)):
 
     raise HTTPException(
         status_code=403,
-        detail="Upgrade your profile. Monthly subscription ₹1000 only."
+        detail="Upgrade your profile. Monthly subscription ₹1099 only."
     )

@@ -15,7 +15,7 @@ def get_admin_stats(user=Depends(super_admin_guard)):
         "isSubscribed": True
     })
 
-    revenue = active_subs * 1000
+    revenue = active_subs * 1099
 
     return {
         "totalOrganizations": total_orgs,
