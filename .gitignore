@@ -10,3 +10,6 @@ Client/node_modules/
 
 # Logs
 *.log
+
+__pycache__/
+*.pyc
