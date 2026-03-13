@@ -20,15 +20,25 @@ def upload_menu(menu: MenuCreate, user=Depends(subscription_guard)):
     }
 
 
+# @router.get("/active/{org_id}")
+# def active_menu(org_id: str):
+#     menu = get_active_menu(org_id)
+
+#     if not menu:
+#         return {
+#             "active": False,
+#             "items": []
+#         }
+
+#     menu["_id"] = str(menu["_id"])
+#     return menu
+
 @router.get("/active/{org_id}")
 def active_menu(org_id: str):
     menu = get_active_menu(org_id)
 
     if not menu:
-        return {
-            "active": False,
-            "items": []
-        }
+        return {"active": False, "sections": []}
 
     menu["_id"] = str(menu["_id"])
     return menu

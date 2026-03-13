@@ -1,7 +1,53 @@
+# from datetime import datetime, timedelta, timezone
+# from app.db.mongodb import db
+
+# menus = db.menus
+
+# def create_menu(data: dict):
+#     now = datetime.now(timezone.utc)
+
+#     menus.update_many(
+#         {"organizationId": data["organizationId"], "active": True},
+#         {"$set": {"active": False}}
+#     )
+
+#     menu = {
+#         "organizationId": data["organizationId"],
+#         "items": data["items"],
+#         "startTime": now,
+#         "endTime": now + timedelta(minutes=data.get("validMinutes", 180)),
+#         "active": True
+#     }
+
+#     result = menus.insert_one(menu)
+#     menu["_id"] = str(result.inserted_id)   # 🔑 STRING ONLY
+    
+
+#     return menu
+
+
+
+# def get_active_menu(org_id: str):
+#     now = datetime.now(timezone.utc)
+#     menu = menus.find_one({
+#         "organizationId": org_id,
+#         "active": True,
+#         "startTime": {"$lte": now},
+#         "endTime": {"$gte": now}
+#     })
+
+#     if not menu:
+#         return None
+
+#     menu["_id"] = str(menu["_id"])  # 🔑 stringify
+#     return menu
+
+
 from datetime import datetime, timedelta, timezone
 from app.db.mongodb import db
 
 menus = db.menus
+
 
 def create_menu(data: dict):
     now = datetime.now(timezone.utc)
@@ -13,21 +59,21 @@ def create_menu(data: dict):
 
     menu = {
         "organizationId": data["organizationId"],
-        "items": data["items"],
+        "sections": data["sections"],   # 🔥 sections instead of items
         "startTime": now,
         "endTime": now + timedelta(minutes=data.get("validMinutes", 180)),
         "active": True
     }
 
     result = menus.insert_one(menu)
-    menu["_id"] = str(result.inserted_id)   # 🔑 STRING ONLY
-    
+    menu["_id"] = str(result.inserted_id)
 
     return menu
 
 
 def get_active_menu(org_id: str):
     now = datetime.now(timezone.utc)
+
     menu = menus.find_one({
         "organizationId": org_id,
         "active": True,
@@ -38,5 +84,5 @@ def get_active_menu(org_id: str):
     if not menu:
         return None
 
-    menu["_id"] = str(menu["_id"])  # 🔑 stringify
+    menu["_id"] = str(menu["_id"])
     return menu

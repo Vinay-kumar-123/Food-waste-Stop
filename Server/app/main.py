@@ -9,6 +9,8 @@ app = FastAPI(title="Food Not Waste API")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
         "https://serviq-platform.vercel.app"
     ],
     allow_origin_regex=r"https://.*\.vercel\.app",

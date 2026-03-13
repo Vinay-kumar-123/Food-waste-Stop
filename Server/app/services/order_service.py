@@ -95,10 +95,47 @@ def get_today_orders(org_id: str, menu_id: str):
 
 
 
-def get_item_wise_demand(org_id: str, menu_id: str):
+# def get_item_wise_demand(org_id: str, menu_id: str):
     
 
-    # 🔑 Fetch only current menu orders
+#     # 🔑 Fetch only current menu orders
+#     order_list = list(
+#         orders.find({
+#             "organizationId": org_id,
+#             "menuId": menu_id
+#         })
+#     )
+
+#     demand = {}
+
+#     for order in order_list:
+#         for item in order.get("items", []):
+#             if item.get("status") == "Eat":
+#                 name = item.get("name")
+#                 if name:
+#                     demand[name] = demand.get(name, 0) + 1
+
+#     return demand
+
+def get_item_wise_demand(org_id: str, menu_id: str):
+
+    menu = menus.find_one({"_id": ObjectId(menu_id)})
+
+    if not menu:
+        return {}
+
+    sections = menu.get("sections", [])
+
+    # structure create
+    demand = {}
+
+    for section in sections:
+        section_name = section["name"]
+        demand[section_name] = {}
+
+        for item in section["items"]:
+            demand[section_name][item["name"]] = 0
+
     order_list = list(
         orders.find({
             "organizationId": org_id,
@@ -106,13 +143,18 @@ def get_item_wise_demand(org_id: str, menu_id: str):
         })
     )
 
-    demand = {}
-
     for order in order_list:
+
         for item in order.get("items", []):
-            if item.get("status") == "Eat":
-                name = item.get("name")
-                if name:
-                    demand[name] = demand.get(name, 0) + 1
+
+            if item["status"] == "Eat":
+
+                for section in sections:
+
+                    for menu_item in section["items"]:
+
+                        if menu_item["name"] == item["name"]:
+
+                            demand[section["name"]][item["name"]] += 1
 
     return demand
