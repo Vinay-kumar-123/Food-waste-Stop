@@ -629,16 +629,22 @@ export default function OrganizationDashboard() {
         <Card>
           <CardBody>
             <h2 className="font-bold text-lg mb-4">Build Menu Sections</h2>
+            {!canUsePremium && (
+              <p className="text-red-600 mb-4 font-medium">
+                Subscription required to upload menu
+              </p>
+            )}
 
             <div className="flex gap-3 mb-5">
               <input
                 placeholder="Section name (Breakfast)"
+                disabled={!canUsePremium}
                 className="border p-2 rounded"
                 value={sectionName}
                 onChange={(e) => setSectionName(e.target.value)}
               />
 
-              <Button onClick={addSection}>Add Section</Button>
+              <Button onClick={addSection} disabled={!canUsePremium}>Add Section</Button>
             </div>
 
             {sections.map((section, index) => (
@@ -664,7 +670,8 @@ export default function OrganizationDashboard() {
                   />
                 </div>
 
-                <Button size="sm" onClick={() => addItem(index)}>
+                <Button size="sm" onClick={() => addItem(index)} disabled={!canUsePremium}>
+
                   Add Item
                 </Button>
 
