@@ -296,7 +296,7 @@ export default function Home() {
 
                 <div>
                   <p className="text-3xl font-bold text-foreground">
-                    ₹1,500<span className="text-lg text-gray-600">/month</span>
+                    ₹1099<span className="text-lg text-gray-600">/month</span>
                   </p>
                   <p className="text-sm text-gray-600">India</p>
                 </div>
