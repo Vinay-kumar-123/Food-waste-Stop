@@ -3,19 +3,16 @@ from app.models.user import UserCreate, UserLogin
 from app.services.auth_service import create_user, authenticate_user
 from app.core.security import create_token
 from app.db.mongodb import db
-
+from pymongo.errors import DuplicateKeyError
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
 organizations = db.organizations
 
+
 @router.post("/signup")
 def signup(user: UserCreate):
 
-    # 🔒 USER ID UNIQUE CHECK
-    if db.users.find_one({"userId": user.userId}):
-        raise HTTPException(400, "User ID already exists")
-
-    # 🎓 STUDENT → ORGANIZATION VALIDATION
+    # 🎓 STUDENT VALIDATION
     if user.type == "student":
         if not user.organizationId:
             raise HTTPException(400, "Organization ID required")
@@ -27,7 +24,11 @@ def signup(user: UserCreate):
         if not org:
             raise HTTPException(400, "Invalid Organization ID")
 
-    new_user = create_user(user.dict())
+    try:
+        new_user = create_user(user.dict())
+
+    except DuplicateKeyError:
+        raise HTTPException(400, "User ID already exists")
 
     token = create_token({
         "userId": new_user["userId"],
@@ -44,8 +45,6 @@ def signup(user: UserCreate):
             "organizationId": new_user.get("organizationId"),
         }
     }
-
-
 
 @router.post("/login")
 def login(data: UserLogin):

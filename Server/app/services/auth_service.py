@@ -33,11 +33,16 @@ def create_user(data: dict):
 
     users.insert_one(data)
     return data
+def authenticate_user(userId, password):
+    user = users.find_one({"userId": userId})
 
-def authenticate_user( userId , password):
-    user = users.find_one({"userId":  userId})
     if not user:
         return None
+
     if not verify_password(password, user["password"]):
         return None
+
+    if not user.get("active", True):   # 🔥 safe check
+        return None
+
     return user

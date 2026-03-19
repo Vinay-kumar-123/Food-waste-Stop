@@ -629,7 +629,11 @@ export default function OrganizationDashboard() {
         <Card>
           <CardBody>
             <h2 className="font-bold text-lg mb-4">Build Menu Sections</h2>
+<<<<<<< HEAD
             {!canUsePremium && (
+=======
+             {!canUsePremium && (
+>>>>>>> 3e0dec6 (mongodb indexing)
               <p className="text-red-600 mb-4 font-medium">
                 Subscription required to upload menu
               </p>

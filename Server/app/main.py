@@ -4,7 +4,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.routers import auth, organization ,  menu, orders, dashboard,subscription 
 from app.routers import webhook
 from app.routers import admin
+from app.db.create_indexes import create_indexes
 app = FastAPI(title="Food Not Waste API")
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -20,6 +22,10 @@ app.add_middleware(
 )
 
 
+
+@app.on_event("startup")
+def startup():
+    create_indexes()
 
 app.include_router(auth.router)
 app.include_router(organization.router)
