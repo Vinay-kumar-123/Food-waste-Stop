@@ -35,6 +35,12 @@ app.include_router(dashboard.router)
 app.include_router(subscription.router)
 app.include_router(webhook.router)
 app.include_router(admin.router)
+
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
 @app.get("/")
 def root():
     return {"status": "Backend running"}
