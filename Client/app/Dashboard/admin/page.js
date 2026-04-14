@@ -1,11 +1,9 @@
-
-
 "use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Leaf, LogOut, Crown } from "lucide-react";
+import { Leaf, LogOut, Crown, Copy, Check } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody } from "@/components/ui/Card";
@@ -20,6 +18,8 @@ export default function OrganizationDashboard() {
   const [organization, setOrganization] = useState(null);
 
   const [subInfo, setSubInfo] = useState(null);
+
+  const [copied, setCopied] = useState(false);
 
   const [canUsePremium, setCanUsePremium] = useState(true);
 
@@ -97,7 +97,9 @@ export default function OrganizationDashboard() {
 
   const loadDashboard = async (orgId) => {
     try {
-      const menuRes = await fetch(`https://food-waste-stop-fastapi.onrender.com/menu/active/${orgId}`);
+      const menuRes = await fetch(
+        `https://food-waste-stop-fastapi.onrender.com/menu/active/${orgId}`,
+      );
 
       const menu = await menuRes.json();
 
@@ -164,23 +166,26 @@ export default function OrganizationDashboard() {
       return;
     }
 
-    const res = await fetch("https://food-waste-stop-fastapi.onrender.com/menu/upload", {
-      method: "POST",
+    const res = await fetch(
+      "https://food-waste-stop-fastapi.onrender.com/menu/upload",
+      {
+        method: "POST",
 
-      headers: {
-        "Content-Type": "application/json",
+        headers: {
+          "Content-Type": "application/json",
 
-        Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
+        },
+
+        body: JSON.stringify({
+          organizationId: organization.organizationId,
+
+          sections,
+
+          validMinutes: 200,
+        }),
       },
-
-      body: JSON.stringify({
-        organizationId: organization.organizationId,
-
-        sections,
-
-        validMinutes: 200,
-      }),
-    });
+    );
 
     if (!res.ok) {
       alert("Menu upload failed");
@@ -203,6 +208,12 @@ export default function OrganizationDashboard() {
 
   if (!organization) return null;
 
+  const copyOrgId = () => {
+    navigator.clipboard.writeText(organization.organizationId);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+
   return (
     <div className="min-h-screen bg-orange-50">
       {/* HEADER */}
@@ -214,10 +225,14 @@ export default function OrganizationDashboard() {
 
             <div>
               <p className="font-bold">{organization.name}</p>
-
-              <p className="text-sm text-gray-500">
-                ID: {organization.organizationId}
-              </p>
+              <div className="flex gap-3">
+                <p className="text-sm text-gray-500">
+                  ID: {organization.organizationId}
+                </p>
+                <button type="button" onClick={copyOrgId}>
+                  {copied ? <Check /> : <Copy />}
+                </button>
+              </div>
             </div>
           </Link>
 
@@ -289,8 +304,7 @@ export default function OrganizationDashboard() {
           <CardBody>
             <h2 className="font-bold text-lg mb-4">Build Menu Sections</h2>
 
-             {!canUsePremium && (
-
+            {!canUsePremium && (
               <p className="text-red-600 mb-4 font-medium">
                 Subscription required to upload menu
               </p>
@@ -305,7 +319,13 @@ export default function OrganizationDashboard() {
                 onChange={(e) => setSectionName(e.target.value)}
               />
 
-              <Button onClick={addSection} disabled={!canUsePremium}>Add Section</Button>
+              <Button
+                variant="primary"
+                onClick={addSection}
+                disabled={!canUsePremium}
+              >
+                Add Section
+              </Button>
             </div>
 
             {sections.map((section, index) => (
@@ -331,8 +351,12 @@ export default function OrganizationDashboard() {
                   />
                 </div>
 
-                <Button size="sm" onClick={() => addItem(index)} disabled={!canUsePremium}>
-
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => addItem(index)}
+                  disabled={!canUsePremium}
+                >
                   Add Item
                 </Button>
 
@@ -352,7 +376,11 @@ export default function OrganizationDashboard() {
             ))}
 
             {sections.length > 0 && (
-              <Button className="w-full mt-4" onClick={uploadMenu}>
+              <Button
+                variant="outline"
+                className="flex justify-center items-center mt-4"
+                onClick={uploadMenu}
+              >
                 Upload Menu
               </Button>
             )}

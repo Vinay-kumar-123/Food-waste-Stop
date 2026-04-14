@@ -7,3 +7,5 @@ passlib[argon2]
 python-jose
 razorpay
 python-multipart
+slowapi 
+redis
