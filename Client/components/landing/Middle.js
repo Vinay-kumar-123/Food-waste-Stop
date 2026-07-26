@@ -1,18 +1,5 @@
-"use client";
-
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import {
-  Leaf,
-  Users,
-  Utensils,
-  TrendingDown,
-  Heart,
-  ArrowRight,
-  Check,
-} from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { Card, CardBody } from "@/components/ui/Card";
 
 export default function Middle() {
   return (

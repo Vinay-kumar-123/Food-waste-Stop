@@ -1,11 +1,11 @@
 
 
-import Header from "@/components/Header";
-import Hero from "@/components/Hero";
-import Stat from "@/components/Stat";
-import PriceSection from "@/components/PriceSection";
-import Middle from "@/components/Middle";
-import Footer from "@/components/Footer";
+import Header from "@/components/layout/Header";
+import Hero from "@/components/landing/Hero";
+import Stat from "@/components/landing/Stat";
+import PriceSection from "@/components/landing/PriceSection";
+import Middle from "@/components/landing/Middle";
+import Footer from "@/components/layout/Footer";
 
 export default function Home() {
   

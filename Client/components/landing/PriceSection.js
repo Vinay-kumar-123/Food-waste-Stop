@@ -1,13 +1,4 @@
-"use client";
-
-import { useEffect, useState } from "react";
-import Link from "next/link";
 import {
-  Leaf,
-  Users,
-  Utensils,
-  TrendingDown,
-  Heart,
   ArrowRight,
   Check,
 } from "lucide-react";

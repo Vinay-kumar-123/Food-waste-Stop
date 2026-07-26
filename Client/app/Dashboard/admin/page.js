@@ -3,14 +3,14 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Leaf, LogOut, Crown, Copy, Check } from "lucide-react";
+import { Leaf, LogOut, Copy, Check, Receipt } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody } from "@/components/ui/Card";
 
 import { subscriptionAPI } from "@/lib/api";
-import UpgradeButton from "@/components/UpgradeButton";
-import SubscriptionBadge from "@/components/SubscriptionBadge";
+import UpgradeButton from "@/components/subscription/UpgradeButton";
+import SubscriptionBadge from "@/components/subscription/SubscriptionBadge";
 
 export default function OrganizationDashboard() {
   const router = useRouter();
@@ -238,6 +238,15 @@ export default function OrganizationDashboard() {
 
           <div className="flex items-center gap-4">
             <SubscriptionBadge info={subInfo} />
+
+            <Link href="/Dashboard/admin/ledger">
+              <Button
+                variant="outline"
+                className="flex gap-2 items-center text-orange-600 border-orange-200 hover:bg-orange-50"
+              >
+                <Receipt size={16} /> Ledger
+              </Button>
+            </Link>
 
             <Button
               variant="outline"
