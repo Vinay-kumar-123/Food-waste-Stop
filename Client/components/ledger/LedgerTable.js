@@ -1,9 +1,9 @@
 "use client";
 
-import { Eye, Utensils } from "lucide-react";
+import { Eye, Utensils, CreditCard } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 
-export function LedgerTable({ students, onSelectStudent }) {
+export function LedgerTable({ students = [], onSelectStudent }) {
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
       <div className="overflow-x-auto">
@@ -11,12 +11,11 @@ export function LedgerTable({ students, onSelectStudent }) {
           <thead>
             <tr className="bg-gray-50 border-b border-gray-200 text-gray-600 font-semibold uppercase text-xs tracking-wider">
               <th className="px-6 py-3.5">Student Details</th>
-              <th className="px-6 py-3.5">Department / Year</th>
+              <th className="px-6 py-3.5">Department</th>
               <th className="px-6 py-3.5">Period</th>
-              <th className="px-6 py-3.5">Meal Register Status</th>
-              <th className="px-6 py-3.5 text-right">Daily Cost</th>
-              <th className="px-6 py-3.5 text-right">Monthly Total</th>
-              <th className="px-6 py-3.5 text-center">Action</th>
+              <th className="px-6 py-3.5 text-center">Total Meals</th>
+              <th className="px-6 py-3.5 text-right">Monthly Bill</th>
+              <th className="px-6 py-3.5 text-center">Monthly Register</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
@@ -36,10 +35,9 @@ export function LedgerTable({ students, onSelectStudent }) {
                   </div>
                 </td>
 
-                {/* Department / Year */}
-                <td className="px-6 py-4 text-gray-600">
-                  <div>{student.department || "General"}</div>
-                  <div className="text-xs text-gray-400">Year {student.year || "2026"}</div>
+                {/* Department */}
+                <td className="px-6 py-4 text-gray-600 font-medium">
+                  {student.department || "General"}
                 </td>
 
                 {/* Period */}
@@ -49,43 +47,27 @@ export function LedgerTable({ students, onSelectStudent }) {
                   </span>
                 </td>
 
-                {/* Meal Register Status */}
-                <td className="px-6 py-4">
-                  <div className="flex flex-wrap gap-1 max-w-xs">
-                    {student.items && student.items.length > 0 ? (
-                      student.items.map((item, i) => (
-                        <span
-                          key={i}
-                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700 border border-green-200"
-                        >
-                          <Utensils className="w-3 h-3" />
-                          {item}
-                        </span>
-                      ))
-                    ) : (
-                      <span className="text-xs text-gray-400 italic">No meals selected</span>
-                    )}
-                  </div>
+                {/* Total Meals */}
+                <td className="px-6 py-4 text-center">
+                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
+                    <Utensils className="w-3 h-3" />
+                    {student.totalMeals} Meals
+                  </span>
                 </td>
 
-                {/* Daily Cost */}
-                <td className="px-6 py-4 text-right font-medium text-gray-900">
-                  {formatCurrency(student.dailyCost || 0)}
-                </td>
-
-                {/* Monthly Total */}
-                <td className="px-6 py-4 text-right font-bold text-green-700">
-                  {formatCurrency(student.monthlyCost || 0)}
+                {/* Monthly Bill */}
+                <td className="px-6 py-4 text-right font-bold text-orange-600 text-base">
+                  {formatCurrency(student.monthlyBill || 0)}
                 </td>
 
                 {/* View Action */}
                 <td className="px-6 py-4 text-center" onClick={(e) => e.stopPropagation()}>
                   <button
                     onClick={() => onSelectStudent(student)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-orange-600 hover:text-orange-700 hover:bg-orange-100/60 rounded-lg transition"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-orange-600 hover:text-orange-700 hover:bg-orange-100/60 rounded-lg transition"
                   >
                     <Eye className="w-3.5 h-3.5" />
-                    Details
+                    View Register
                   </button>
                 </td>
               </tr>

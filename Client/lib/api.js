@@ -53,6 +53,8 @@ export const ordersAPI = {
 export const dashboardAPI = {
   todaySummary: (orgId, menuId) =>
     apiClient.get(`/dashboard/org/today/${orgId}/${menuId}`),
+  monthlyLedger: (orgId, params) =>
+    apiClient.get(`/dashboard/org/ledger/${orgId}`, { params }),
 };
 
 /* 🔔 SUBSCRIPTION */
